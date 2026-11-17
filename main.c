@@ -138,7 +138,7 @@ static void doPlayGame(User user)
         return;
     }
     printf("\n恭喜通关！本局用时 %d 秒。\n", seconds);
-    result = saveScore(user.name, level, seconds); //bug：使用了rank里面的saveSource，不能直接像另外的do一样转接进对应模块中
+    result = saveScore(user.name, level, seconds); // 直接调用排行榜模块的 saveScore；返回 1 表示成绩已刷新
     if (result == 1) {
         printf("成绩已保存到排行榜。\n");
     } else if (result == 0) {
