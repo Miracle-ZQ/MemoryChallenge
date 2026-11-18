@@ -88,7 +88,6 @@ static const Color COLOR_FOOT        = { 130, 136, 148, 255 };  // 页脚说明
 // 以下是本文件内部使用的函数，只在本文件可见
 static int loadUsers(User users[], int maxCount);
 static int findUser(const User users[], int count, const char name[]);
-static int isNameUsed(const char name[]);
 static void setMessage(const char *text, int isError);
 static void clearInputs(void);
 static void buildUserFromForm(User *user);
@@ -124,11 +123,6 @@ static int checkPassword(char password[])
     int kinds;  // 密码中实际出现的字符种类数（0～4）
     int i;  // 扫描密码用的下标
     unsigned char ch;  // 当前字符，用无符号类型可避免 ctype 越界
-
-    if (password == NULL)  // 防御性检查，空指针判不安全
-    {
-        return 0;
-    }
 
     length = (int)strlen(password);  // 取密码长度
     if (length < 6)  // 长度不足 6 位一律不安全
@@ -180,19 +174,6 @@ static int checkPassword(char password[])
 static int registerUser(User user)
 {
     FILE *fp;  // 指向 users.txt 的文件指针
-    int used;  // 用户名是否已被占用：1 已占用，0 未占用
-
-    if (user.name[0] == '\0' || user.password[0] == '\0')  // 参数为空不处理
-    {
-        return 0;
-    }
-
-    used = isNameUsed(user.name);  // 先查重，用户名不能重复
-    if (used != 0)
-    {
-        return 0;  // 1 重名，-1 读取失败，都按失败处理
-    }
-
     fp = fopen(USERS_FILE, "a");  // 追加打开，文件不存在时自动创建
     if (fp == NULL)
     {
@@ -305,30 +286,6 @@ static int findUser(const User users[], int count, const char name[])
 }
 
 /*------------------------------------------------------------------------
- * 函数：isNameUsed
- * 功  能：判断用户名是否已经在 users.txt 中出现过，注册前用来查重
- * 输  入：name —— 待检查的用户名
- * 输  出：不修改账号文件
- * 返回值：1 已被占用；0 可以使用；-1 账号文件读取失败
- *------------------------------------------------------------------------*/
-static int isNameUsed(const char name[])
-{
-    User users[USER_MAX];  // 临时存放读入的账号
-    int count;  // 实际读入的账号个数
-
-    count = loadUsers(users, USER_MAX);
-    if (gLoadError != 0)  // 读取出错时不要误判成“可以使用”
-    {
-        return -1;
-    }
-    if (findUser(users, count, name) >= 0)
-    {
-        return 1;  // 找到了，用户名已被占用
-    }
-    return 0;  // 没找到，可以使用
-}
-
-/*------------------------------------------------------------------------
  * 函数：setMessage
  * 功  能：设置页面底部的提示文字和颜色
  * 输  入：text —— 提示内容；isError —— 1 表示红色错误，0 表示绿色正常
@@ -369,10 +326,8 @@ static void clearInputs(void)
  *------------------------------------------------------------------------*/
 static void buildUserFromForm(User *user)
 {
-    strncpy(user->name, gName, NAME_MAX - 1);
-    user->name[NAME_MAX - 1] = '\0';
-    strncpy(user->password, gPassword, PASSWORD_MAX - 1);
-    user->password[PASSWORD_MAX - 1] = '\0';
+    strcpy(user->name, gName);  // 输入长度已在输入时限制，直接复制即可
+    strcpy(user->password, gPassword);
 }
 
 /*------------------------------------------------------------------------
@@ -388,31 +343,20 @@ static void buildUserFromForm(User *user)
 static void handleCharInput(void)
 {
     int code;  // 本帧读到的一个字符编码，0 表示队列已空
+    char *text = (gFocus == 0) ? gName : gPassword;  // 当前有焦点的输入框
+    int *length = (gFocus == 0) ? &gNameLength : &gPasswordLength;  // 框里的长度
+    int limit = (gFocus == 0) ? NAME_MAX - 1 : PASSWORD_MAX - 1;  // 框的长度上限
 
     while ((code = GetCharPressed()) > 0)
     {
-        if (code < 33 || code > 126)  // 不可打印或空格都丢弃
+        // 只收可打印 ASCII，超长或多字节字符直接丢掉
+        if (code < 33 || code > 126 || *length >= limit)
         {
             continue;
         }
-        if (gFocus == 0)  // 只在有焦点的框里写
-        {
-            if (gNameLength < NAME_MAX - 1)  // 最多 31 字节
-            {
-                gName[gNameLength] = (char)code;
-                gNameLength++;
-                gName[gNameLength] = '\0';
-            }
-        }
-        else
-        {
-            if (gPasswordLength < PASSWORD_MAX - 1)  // 最多 63 字节
-            {
-                gPassword[gPasswordLength] = (char)code;
-                gPasswordLength++;
-                gPassword[gPasswordLength] = '\0';
-            }
-        }
+        text[*length] = (char)code;
+        (*length)++;
+        text[*length] = '\0';  // 末尾始终留结束符
     }
 }
 
@@ -426,26 +370,15 @@ static void handleCharInput(void)
  *------------------------------------------------------------------------*/
 static void handleBackspace(void)
 {
-    if (!IsKeyPressed(KEY_BACKSPACE))  // 本帧没有按退格就直接返回
+    char *text = (gFocus == 0) ? gName : gPassword;  // 当前有焦点的输入框
+    int *length = (gFocus == 0) ? &gNameLength : &gPasswordLength;  // 框里的长度
+
+    if (!IsKeyPressed(KEY_BACKSPACE) || *length <= 0)  // 没按退格或框已空
     {
         return;
     }
-    if (gFocus == 0)
-    {
-        if (gNameLength > 0)
-        {
-            gNameLength--;
-            gName[gNameLength] = '\0';
-        }
-    }
-    else
-    {
-        if (gPasswordLength > 0)
-        {
-            gPasswordLength--;
-            gPassword[gPasswordLength] = '\0';
-        }
-    }
+    (*length)--;  // 删掉末尾一个字符
+    text[*length] = '\0';
 }
 
 /*------------------------------------------------------------------------
@@ -481,14 +414,9 @@ static int tryLogin(User *user)
         return 1;
     }
 
-    if (gLoadError != 0)  // 文件读取出错和密码错要分开提示
-    {
-        setMessage("账号文件读取失败，请检查 users.txt", 1);
-    }
-    else
-    {
-        setMessage("用户名或密码错误", 1);
-    }
+    // 文件读取出错和密码错误要分开提示
+    setMessage((gLoadError != 0) ? "账号文件读取失败，请检查 users.txt"
+                                 : "用户名或密码错误", 1);
     gFocus = 1;
     return 0;
 }
@@ -506,7 +434,6 @@ static int registerCurrentForm(void)
 {
     User users[USER_MAX];  // 用来数一下已经有多少个账号
     User newUser;  // 本次准备注册的新用户
-    int used;  // 用户名占用情况：1 已占用，0 可用，-1 读错
     int count;  // 已有账号个数
     int strength;  // 密码安全等级 0/1/2
 
@@ -525,20 +452,20 @@ static int registerCurrentForm(void)
 
     buildUserFromForm(&newUser);
 
-    used = isNameUsed(newUser.name);  // 3. 用户名不能重复
-    if (used < 0)
+    // 3/4. 只读一次账号文件，同时完成查重和数量检查
+    count = loadUsers(users, USER_MAX);
+    if (gLoadError != 0)
     {
         setMessage("账号文件读取失败，请检查 users.txt", 1);
         return 0;
     }
-    if (used > 0)
+    if (findUser(users, count, newUser.name) >= 0)
     {
         setMessage("该用户名已被注册，请换一个", 1);
         gFocus = 0;
         return 0;
     }
-
-    count = loadUsers(users, USER_MAX);  // 4. 账号数量不能超过上限
+    if (count >= USER_MAX)
     if (count >= USER_MAX)
     {
         setMessage("账号数量已达上限，无法再注册", 1);
@@ -609,11 +536,6 @@ int updateAccountPage(User *user)
 {
     Vector2 mouse;  // 本帧鼠标位置，用来判断点中了哪个输入框
 
-    if (user == NULL)  // 防御性检查：没有接收变量就按返回处理
-    {
-        return 2;
-    }
-
     // 弱密码确认状态下，只响应“继续注册”和“返回修改”两个按钮
     if (gConfirmWeak != 0)
     {
@@ -638,15 +560,6 @@ int updateAccountPage(User *user)
     {
         gFocus = 1 - gFocus;
     }
-    if (IsKeyPressed(KEY_ENTER))  // 回车等于点了主按钮
-    {
-        if (gRegisterMode != 0)
-        {
-            return registerCurrentForm();
-        }
-        return tryLogin(user);
-    }
-
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))  // 点输入框切换焦点
     {
         mouse = GetMousePosition();
@@ -660,7 +573,8 @@ int updateAccountPage(User *user)
         }
     }
 
-    if (isButtonClicked(primaryButton) != 0)  // 主按钮：登录或注册
+    // 回车和主按钮是同一条路：登录页去登录，注册页去注册
+    if (IsKeyPressed(KEY_ENTER) || isButtonClicked(primaryButton) != 0)
     {
         if (gRegisterMode != 0)
         {
@@ -688,11 +602,7 @@ int updateAccountPage(User *user)
 static void drawTextAt(Font font, const char *text, float x, float y, int fontSize,
                        Color color)
 {
-    Vector2 position;  // 文字左上角坐标
-
-    position.x = x;
-    position.y = y;
-    DrawTextEx(font, text, position, (float)fontSize, 1.0f, color);
+    DrawTextEx(font, text, (Vector2){x, y}, (float)fontSize, 1.0f, color);
 }
 
 /*------------------------------------------------------------------------
@@ -706,13 +616,10 @@ static void drawTextAt(Font font, const char *text, float x, float y, int fontSi
 static void drawTextCentered(Font font, const char *text, float centerX, float y,
                              int fontSize, Color color)
 {
-    Vector2 textSize;  // 这段文字画出来有多宽多高
-    Vector2 position;  // 左上角坐标
+    Vector2 size = MeasureTextEx(font, text, (float)fontSize, 1.0f);  // 文字实际宽度
 
-    textSize = MeasureTextEx(font, text, (float)fontSize, 1.0f);
-    position.x = centerX - textSize.x / 2.0f;  // 按实际宽度居中
-    position.y = y;
-    DrawTextEx(font, text, position, (float)fontSize, 1.0f, color);
+    DrawTextEx(font, text, (Vector2){centerX - size.x / 2.0f, y},
+               (float)fontSize, 1.0f, color);
 }
 
 /*------------------------------------------------------------------------
@@ -822,14 +729,9 @@ static void drawStrengthHint(Font font)
  *------------------------------------------------------------------------*/
 void drawAccountPage(Font font)
 {
-    Rectangle panel;  // 中间白色面板的矩形
+    Rectangle panel = {PANEL_X, PANEL_Y, PANEL_W, PANEL_H};  // 中间面板
     char masked[PASSWORD_MAX];  // 密码换成星号后的字符串
-    int i;  // 生成星号用的下标
 
-    panel.x = PANEL_X;
-    panel.y = PANEL_Y;
-    panel.width = PANEL_W;
-    panel.height = PANEL_H;
     DrawRectangleRec(panel, COLOR_PANEL);  // 面板底色
     DrawRectangleLinesEx(panel, 2.0f, COLOR_PANEL_LINE);  // 面板边框
 
@@ -844,11 +746,8 @@ void drawAccountPage(Font font)
     drawTextAt(font, "用户名", INPUT_X, 162.0f, 20, COLOR_LABEL);
     drawInputBox(font, nameBox, gName, "请输入用户名", gFocus == 0);
 
-    // 密码输入框：先把每个字符换成星号再显示，屏幕上不出现原密码
-    for (i = 0; i < gPasswordLength; i++)
-    {
-        masked[i] = '*';
-    }
+    // 密码输入框：先换成星号再显示，屏幕上不出现原密码
+    memset(masked, '*', (size_t)gPasswordLength);
     masked[gPasswordLength] = '\0';
     drawTextAt(font, "密码", INPUT_X, 252.0f, 20, COLOR_LABEL);
     drawInputBox(font, passwordBox, masked, "请输入密码", gFocus == 1);
