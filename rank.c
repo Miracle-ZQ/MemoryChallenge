@@ -42,9 +42,6 @@ static const Rectangle g_backButton = { 40.0f, 520.0f, BTN_W, BTN_H };
 
 /*
  * 功能：难度编号转中文名
- * 输入：level 是难度 1、2、3
- * 输出：无
- * 返回值：名称字符串
  */
 static const char *levelName(int level)
 {
@@ -60,7 +57,7 @@ static const char *levelName(int level)
  * 输出：直接调整数组，同用时的记录保持原顺序（插入排序是稳定的）
  * 返回值：无
  */
-static void sortLevel(int k)
+static void sortLevel(int k)//排行
 {
     int i;
     int j;
