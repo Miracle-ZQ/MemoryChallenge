@@ -50,15 +50,14 @@ int loadUiResources(Font *font)
 
     if (font == NULL) return 0;
 
-    // 组内字体优先，没有就用系统黑体
-    if (!FileExists(path)) path = UI_SYSTEM_FONT_PATH;
-    if (!FileExists(path)) return 0;
+    
+    if (!FileExists(path)) path = UI_SYSTEM_FONT_PATH;//如果没有组内字体就用系统黑体
+    if (!FileExists(path)) return 0;//如果还没有就放弃
 
-    // 把 UI_GLYPHS 转成字符编号数组，顺便去重
-    all = LoadCodepoints(UI_GLYPHS, &total);
+    all = LoadCodepoints(UI_GLYPHS, &total);//raylib只能识别编号，所以要进行转换
     if (all == NULL) return 0;
 
-    for (i = 0; i < total && count < UI_CODEPOINT_MAX; i++)
+    for (i = 0; i < total && count < UI_CODEPOINT_MAX; i++)//去重操作，已经有了的字体就不再加载
     {
         int dup = 0;
 
@@ -95,7 +94,7 @@ int loadUiResources(Font *font)
  * 输出：释放字体资源
  * 返回值：无
  */
-void unloadUiResources(Font font)
+void unloadUiResources(Font font)//释放内存的函数
 {
     if (font.texture.id != 0) UnloadFont(font);
 }
@@ -128,11 +127,10 @@ void drawButton(Rectangle bounds, const char text[], Font font)
     Color fill;
     Color border;
 
-    // 鼠标在按钮上时换一套颜色，做出悬停反馈
-    hover = CheckCollisionPointRec(GetMousePosition(), bounds);
+    hover = CheckCollisionPointRec(GetMousePosition(), bounds);//CheckCollisionPointRec函数：检查点是否位于矩形内部
 
-    fill = hover ? (Color){ 222, 236, 252, 255 } : (Color){ 246, 248, 252, 255 };
-    border = hover ? (Color){ 70, 130, 190, 255 } : (Color){ 150, 165, 185, 255 };
+    fill = hover ? (Color){ 222, 236, 252, 255 } : (Color){ 246, 248, 252, 255 };//判断出在矩形内部的话进行悬停反馈
+    border = hover ? (Color){ 70, 130, 190, 255 } : (Color){ 150, 165, 185, 255 };//边框
 
     // 先铺底色，再描边
     DrawRectangleRec(bounds, fill);
@@ -145,8 +143,7 @@ void drawButton(Rectangle bounds, const char text[], Font font)
     pos.x = bounds.x + (bounds.width - size.x) / 2.0f;
     pos.y = bounds.y + (bounds.height - size.y) / 2.0f;
 
-    // 中文必须用 DrawTextEx（能指定字体），DrawText 只能画 ASCII
-    DrawTextEx(font, text, pos, 20.0f, 1.0f, (Color){ 30, 40, 55, 255 });
+    DrawTextEx(font, text, pos, 20.0f, 1.0f, (Color){ 30, 40, 55, 255 });//DrawTextEx适合中文，能够指定字体
 }
 
 /*
@@ -155,15 +152,15 @@ void drawButton(Rectangle bounds, const char text[], Font font)
  * 输出：无
  * 返回值：等比例缩放且居中的相机
  */
-Camera2D getUiCamera(void)
+Camera2D getUiCamera(void)//等比放大窗口的函数
 {
     Camera2D camera = {0};
     float scaleX = GetScreenWidth() / 800.0f;
     float scaleY = GetScreenHeight() / 600.0f;
 
-    camera.zoom = scaleX < scaleY ? scaleX : scaleY;
-    camera.offset.x = (GetScreenWidth() - 800 * camera.zoom) / 2;
-    camera.offset.y = (GetScreenHeight() - 600 * camera.zoom) / 2;
+    camera.zoom = scaleX < scaleY ? scaleX : scaleY;//取较小的那个 保证两边都能放下
+    camera.offset.x = (GetScreenWidth() - 800 * camera.zoom) / 2;//水平居中
+    camera.offset.y = (GetScreenHeight() - 600 * camera.zoom) / 2;//垂直居中
 
     return camera;
 }
