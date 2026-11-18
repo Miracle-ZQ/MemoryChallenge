@@ -3,16 +3,16 @@
 #include "ui.h"
 
 // 棋盘数据只由本模块使用，其他模块通过接口取得游戏结果
-static int cards[6][6];
-static int state[6][6];  // 0 盖住，1 本轮翻开，2 已配对
-static int selectedRows[3], selectedCols[3];
-static int rows, cols, count, groupSize;
-static int currentLevel, elapsedSeconds;
-static int matchErrors;  // 选满一组后配对失败才计一次
-static double previewEnd, startTime, hideTime;
-static int previewSeconds;
-static int cheatCount;
-static double revealEnd;
+static int cards[6][6];  // 每个位置的牌面编号，相同编号表示同一种图案
+static int state[6][6];  // 牌的状态：0 盖住，1 本轮翻开，2 已配对
+static int selectedRows[3], selectedCols[3];  // 本轮所选牌的行、列下标，高级最多选三张
+static int rows, cols, count, groupSize;  // 本局行数、列数、当前已选张数、每组需要的张数
+static int currentLevel, elapsedSeconds;  // 本局难度和盖牌后已用的整秒数
+static int matchErrors;  // 本局配对错误次数，选满一组但不相同时加一次
+static double previewEnd, startTime, hideTime;  // 开局亮牌截止时刻、正式计时起点、错牌盖回时刻，单位为秒
+static int previewSeconds;  // 当前难度开局亮牌的总秒数
+static int cheatCount;  // 本局手动亮牌的使用次数，开局自动亮牌不计入
+static double revealEnd;  // 手动亮牌结束的时刻，单位为秒
 
 typedef enum {
     GAME_IDLE,
@@ -23,23 +23,23 @@ typedef enum {
     GAME_FINISHED,
     GAME_EXITED
 } GamePhase;
-static GamePhase phase = GAME_IDLE;
+static GamePhase phase = GAME_IDLE;  // 游戏当前阶段，初始为尚未开始
 
-static Texture2D faces[12];
-static Texture2D back;
-static int usePictures = 0;
+static Texture2D faces[12];  // 十二种正面图片的纹理，按牌面编号取用
+static Texture2D back;  // 所有卡牌共用的背面图片纹理
+static int usePictures = 0;  // 是否使用图片：1 使用，0 改用字符显示
 // 编号只用来配对；没有图片时按编号显示原终端版字符
-static const char symbols[] =
+static const char symbols[] =  // 没有图片时使用的字符表，下标对应牌面编号
     "!@#$%^&()-_=+[]{};:,.<>/?|~`"
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz"
     "1234567890";
 // 每次根据窗口和棋盘计算，不再固定卡牌宽高和间距
 typedef struct {
-    float left, top;
-    float cardWidth, cardHeight, gap;
-    Rectangle backButton;
-    Rectangle revealButton;
+    float left, top;  // 棋盘左上角在界面布局中的坐标
+    float cardWidth, cardHeight, gap;  // 单张牌的宽、高，以及相邻牌之间的间距
+    Rectangle backButton;  // 本帧返回按钮的绘制和点击区域
+    Rectangle revealButton;  // 本帧手动亮牌按钮的绘制和点击区域
 } GameLayout;
 
 // 初始化、洗牌、配对和通关判断
@@ -61,8 +61,8 @@ static void drawCardPicture(Texture2D picture, Rectangle bounds);
  */
 int loadGameResources(void)
 {
-    int i;
-    int anyPicture = FileExists("assets/cards/back.png");
+    int i;  // 循环下标，用于遍历图片或本轮所选的牌
+    int anyPicture = FileExists("assets/cards/back.png");  // 是否发现了任意卡牌图片，用来区分无图片和图片不完整
     unloadGameResources();
     for (i = 0; i < 12; i++) {
         if (FileExists(TextFormat("assets/cards/%02d.png", i))) {
@@ -96,15 +96,11 @@ int loadGameResources(void)
 /*
  * 功能：开始新的一局，重置棋盘、时间和选牌记录
  * 输入：level 为 1 初级、2 中级、3 高级
- * 输出：生成并打乱棋盘，进入亮牌阶段；无效难度进入未开始状态
- * 返回值：1 成功，0 难度无效
+ * 输出：生成并打乱棋盘，进入亮牌阶段
+ * 返回值：无
  */
-int startGame(int level)
+void startGame(int level)
 {
-    phase = GAME_IDLE;
-    if (level < 1 || level > 3) {
-        return 0;
-    }
     currentLevel = level;
     initBoard(level);
     shuffleBoard();
@@ -118,7 +114,6 @@ int startGame(int level)
     previewSeconds = level == 1 ? 4 : level == 2 ? 6 : 8;
     previewEnd = GetTime() + previewSeconds;
     phase = GAME_PREVIEW;
-    return 1;
 }
 
 /*
@@ -129,9 +124,9 @@ int startGame(int level)
  */
 int updateGame(int *seconds)
 {
-    int r, c, i;
-    double now = GetTime();
-    GameLayout layout;
+    int r, c, i;  // 棋盘行下标、列下标，以及本轮选牌数组的循环下标
+    double now = GetTime();  // 本帧当前时刻，单位为秒，用于判断各阶段是否到时
+    GameLayout layout;  // 本帧使用的棋盘布局和按钮区域
 
     if (phase == GAME_IDLE || phase == GAME_EXITED) {
         return 2;
@@ -243,13 +238,13 @@ int getGameCheats(void)
  */
 void drawGame(Font font)
 {
-    int r, c;
-    Rectangle bounds;
-    Color fill;
-    const char *label;
-    Vector2 size;
-    GameLayout layout = getGameLayout();
-    float textSize;
+    int r, c;  // 遍历棋盘使用的行、列下标
+    Rectangle bounds;  // 当前这张牌的绘制区域，与点击判定区域一致
+    Color fill;  // 当前卡牌的背景颜色，已配对时使用不同颜色
+    const char *label;  // 本次要绘制的状态文字或牌面字符
+    Vector2 size;  // 牌面文字绘制后的宽和高，用来居中
+    GameLayout layout = getGameLayout();  // 按当前窗口尺寸计算得到的本帧布局
+    float textSize;  // 随卡牌大小计算出的牌面字符字号
     DrawTextEx(font, (currentLevel == 1 ? "初级" : currentLevel == 2 ? "中级" : "高级"),
                (Vector2){-getUiCamera().offset.x / getUiCamera().zoom + 10, 8}, 18, 1, DARKGRAY);
     DrawTextEx(font, TextFormat("作弊：%d 次", cheatCount),
@@ -262,9 +257,9 @@ void drawGame(Font font)
     DrawTextEx(font, label, (Vector2){-getUiCamera().offset.x / getUiCamera().zoom + 10, 32}, 16, 1, DARKGRAY);
     if (phase == GAME_PREVIEW || phase == GAME_REVEAL) {
         // 使用剩余时间的比例控制宽度，逐帧连续缩短，而不是每秒跳一格
-        float left = -getUiCamera().offset.x / getUiCamera().zoom + 10;
-        Rectangle track = {left + 170, 34, layout.revealButton.x - left - 182, 10};
-        Rectangle progress = track;
+        float left = -getUiCamera().offset.x / getUiCamera().zoom + 10;  // 窗口左侧留边换算到界面坐标后的位置
+        Rectangle track = {left + 170, 34, layout.revealButton.x - left - 182, 10};  // 倒计时进度条完整的背景区域
+        Rectangle progress = track;  // 进度条当前已填充区域，宽度随后按剩余时间缩短
         progress.width *= getPreviewProgress();
         DrawRectangleRec(track, (Color){218, 226, 236, 255});
         DrawRectangleRec(progress, (Color){65, 125, 190, 255});
@@ -308,7 +303,7 @@ void drawGame(Font font)
  */
 void unloadGameResources(void)
 {
-    int i;
+    int i;  // 循环下标，用于遍历图片或本轮所选的牌
     for (i = 0; i < 12; i++) {
         if (faces[i].id != 0) UnloadTexture(faces[i]);
         faces[i] = (Texture2D){0};
@@ -326,7 +321,7 @@ void unloadGameResources(void)
  */
 static void initBoard(int level)
 {
-    int r, c, number = 0;
+    int r, c, number = 0;  // 初始化用的行、列下标，以及已填入的牌数
     rows = level == 3 ? 6 : 4;
     cols = level == 1 ? 4 : level == 2 ? 5 : 6;
     groupSize = level == 3 ? 3 : 2;
@@ -352,7 +347,7 @@ static void initBoard(int level)
  */
 static void shuffleBoard(void)
 {
-    int i, j, temp;
+    int i, j, temp;  // 洗牌时的当前位置、随机交换位置，以及交换用的临时编号
     for (i = rows * cols - 1; i > 0; i--) {
         j = rand() % (i + 1);
         temp = cards[i / cols][i % cols];
@@ -369,8 +364,8 @@ static void shuffleBoard(void)
  */
 static int checkMatch(void)
 {
-    int i;
-    int first = cards[selectedRows[0]][selectedCols[0]];
+    int i;  // 循环下标，用于遍历图片或本轮所选的牌
+    int first = cards[selectedRows[0]][selectedCols[0]];  // 本轮第一张牌的编号，其他牌都与它比较
     for (i = 1; i < count; i++) {
         if (cards[selectedRows[i]][selectedCols[i]] != first) return 0;
     }
@@ -385,7 +380,7 @@ static int checkMatch(void)
  */
 static int isFinished(void)
 {
-    int r, c;
+    int r, c;  // 遍历棋盘使用的行、列下标
     for (r = 0; r < rows; r++) {
         for (c = 0; c < cols; c++) {
             if (state[r][c] != 2) return 0;
@@ -402,7 +397,7 @@ static int isFinished(void)
  */
 static float getPreviewProgress(void)
 {
-    float progress;
+    float progress;  // 剩余亮牌时间的比例，限制在 0 到 1 之间
     if (phase == GAME_REVEAL) {
         progress = (float)((revealEnd - GetTime()) / 4.0);
     } else {
@@ -422,14 +417,14 @@ static float getPreviewProgress(void)
  */
 static GameLayout getGameLayout(void)
 {
-    Camera2D camera = getUiCamera();
-    GameLayout layout;
+    Camera2D camera = getUiCamera();  // 窗口对应的缩放与居中参数，用于布局坐标换算
+    GameLayout layout;  // 本帧使用的棋盘布局和按钮区域
     // 相机为其他页面留出的两侧空白，在游戏页也用来摆牌
-    float width = GetScreenWidth() / camera.zoom;
-    float height = GetScreenHeight() / camera.zoom;
-    float margin = 10;
-    float boardTop = 62;
-    float availableHeight = height - boardTop - margin;
+    float width = GetScreenWidth() / camera.zoom;  // 窗口宽度换算成界面布局坐标后的长度
+    float height = GetScreenHeight() / camera.zoom;  // 窗口高度换算成界面布局坐标后的长度
+    float margin = 10;  // 棋盘与窗口边缘保留的距离，使用界面布局单位
+    float boardTop = 62;  // 棋盘顶部位置，上方留给状态文字和按钮
+    float availableHeight = height - boardTop - margin;  // 扣除状态栏和底部留边后的可用高度
 
     layout.gap = availableHeight / 90;
     if (layout.gap < 4) layout.gap = 4;
@@ -475,11 +470,11 @@ static Rectangle cardBounds(GameLayout layout, int row, int col)
  */
 static void drawCardPicture(Texture2D picture, Rectangle bounds)
 {
-    float padding = (bounds.width < bounds.height ? bounds.width : bounds.height) * 0.08f;
-    float sx = (bounds.width - padding * 2) / picture.width;
-    float sy = (bounds.height - padding * 2) / picture.height;
-    float scale = sx < sy ? sx : sy;
-    Rectangle dest = {bounds.x + (bounds.width - picture.width * scale) / 2,
+    float padding = (bounds.width < bounds.height ? bounds.width : bounds.height) * 0.08f;  // 图片与卡牌边框的留白，按短边的比例计算
+    float sx = (bounds.width - padding * 2) / picture.width;  // 图片按可用宽度放入卡牌时的缩放比例
+    float sy = (bounds.height - padding * 2) / picture.height;  // 图片按可用高度放入卡牌时的缩放比例
+    float scale = sx < sy ? sx : sy;  // 取较小缩放比例，保证图片完整显示且不变形
+    Rectangle dest = {bounds.x + (bounds.width - picture.width * scale) / 2,  // 图片最终绘制的位置和大小，下面两行继续填写矩形成员
                       bounds.y + (bounds.height - picture.height * scale) / 2,
                       picture.width * scale, picture.height * scale};
     DrawTexturePro(picture, (Rectangle){0, 0, (float)picture.width, (float)picture.height},
