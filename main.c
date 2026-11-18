@@ -18,14 +18,17 @@ typedef enum {
     PAGE_RANK
 } Page;
 
-// 三行菜单：账号、游戏、排行榜
-static const Rectangle loginButton = {180, 180, 200, 48};
-static const Rectangle registerButton = {420, 180, 200, 48};
-static const Rectangle switchButton = {180, 180, 440, 48};
-static const Rectangle gameButton = {180, 260, 440, 48};
-static const Rectangle rankButton = {180, 340, 440, 48};
-static const Rectangle exitButton = {300, 460, 200, 48};
-static const Rectangle backButton = {300, 460, 200, 48};
+//按钮位置
+static const Rectangle loginButton = {180, 180, 200, 48};  // 登录按钮的区域，依次为 x、y、宽、高
+static const Rectangle registerButton = {420, 180, 200, 48};  // 注册
+static const Rectangle switchButton = {180, 180, 440, 48};  // 切换账号
+static const Rectangle gameButton = {180, 260, 440, 48};  // 开始游戏
+static const Rectangle rankButton = {180, 340, 440, 48};  // 排行榜
+static const Rectangle exitButton = {300, 460, 200, 48};  // 退出程序
+static const Rectangle backButton = {300, 460, 200, 48};  // 返回菜单
+static const Rectangle easyButton = {250, 180, 300, 48};  // 初级
+static const Rectangle mediumButton = {250, 260, 300, 48};  // 中级
+static const Rectangle hardButton = {250, 340, 300, 48};  // 高级
 
 // 在窗口中居中绘制一行文字
 static void drawCentered(Font font, const char text[], float y, float size);
@@ -42,130 +45,116 @@ static void drawLevels(Font font);
  */
 int main(void)
 {
-    Font font = {0};
+    Font font = {0};  // 界面共用的字体，加载后交给各页面绘制文字
     // 直接在高分辨率窗口绘制，保留各模块原来的布局坐标
-    Camera2D camera = {0};
-    Page page = PAGE_ENTRY;
-    User user = {0};
-    int accountResult;
-    int running = 1;
-    int level = 0;
-    int seconds = 0;
-    int gameResult;
-    int saveResult = 0;
-    Rectangle levelButton;
-    int i;
+    Camera2D camera = {0};  // 界面缩放和居中位置，鼠标坐标也按它换算
+    Page page = PAGE_ENTRY;  // 当前显示的页面，启动时先显示登录入口
+    User user = {0};  // 当前登录账号，未登录时内容为空
+    int accountResult;  // 账号页返回的结果：0 继续，1 登录成功，2 返回
+    int running = 1;  // 程序是否继续运行：1 继续，0 退出
+    int level = 0;  // 本局难度：1 初级，2 中级，3 高级，0 尚未选择
+    int seconds = 0;  // 游戏模块返回的通关用时，单位为秒
+    int gameResult;  // 游戏更新结果：0 继续，1 通关，2 退出本局
+    int saveResult = 0;  // 排行榜保存结果：1 成功，0 未更新，-1 出错
 
     srand((unsigned int)time(NULL));
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(2560, 1440, "记忆力大考验");
-    if (!IsWindowReady()) {
-        return 1;
-    }
-    SetWindowMinSize(800, 600);
-    SetTargetFPS(60);
-    SetExitKey(KEY_NULL);
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);  // 允许调整窗口大小
+    InitWindow(800, 600, "记忆力大考验");  // 创建初始大小为 800×600 的窗口
+    SetWindowMinSize(800, 600);  // 限制窗口最小为 800×600
+    SetTargetFPS(60);  // 设置目标帧率为每秒 60 帧
+    SetExitKey(KEY_NULL);  // 禁用默认按 Esc 退出程序的行为
 
-    if (!loadUiResources(&font)) {
-        CloseWindow();
-        return 1;
-    }
-
-    if (!loadGameResources()) {
-        TraceLog(LOG_ERROR, "Card resources are incomplete or invalid");
-        unloadUiResources(font);
-        CloseWindow();
-        return 1;
-    }
+    loadUiResources(&font);//加载字体
+    loadGameResources();//加载卡牌
 
     while (running && !WindowShouldClose()) {
         camera = getUiCamera();
         // 先扣除居中留白，再将鼠标坐标换回原来的 800x600 布局
         SetMouseOffset(-(int)camera.offset.x, -(int)camera.offset.y);
         SetMouseScale(1.0f / camera.zoom, 1.0f / camera.zoom);
-        // 所有玩家页面都要求登录成功
-        if (page != PAGE_ENTRY && page != PAGE_ACCOUNT && user.name[0] == '\0') {
-            page = PAGE_ENTRY;
-        }
         // 每帧只更新一个页面，切换后不会重复处理同一次点击
         switch (page) {
             case PAGE_ENTRY:
-                if (isButtonClicked(loginButton)) {
+                if (isButtonClicked(loginButton)) {//登录
                     resetAccountPage(0);
                     page = PAGE_ACCOUNT;
-                } else if (isButtonClicked(registerButton)) {
+                } else if (isButtonClicked(registerButton)) {//注册
                     resetAccountPage(1);
                     page = PAGE_ACCOUNT;
-                } else if (isButtonClicked(exitButton)) {
+                } else if (isButtonClicked(exitButton)) {//退出
                     running = 0;
                 }
                 break;
 
             case PAGE_ACCOUNT:
                 accountResult = updateAccountPage(&user);
-                if (accountResult == 1) {
+                if (accountResult == 1) {//登陆成功
                     page = PAGE_MENU;
-                } else if (accountResult == 2) {
+                } else if (accountResult == 2) {//返回
                     page = PAGE_ENTRY;
                 }
                 break;
 
             case PAGE_MENU:
-                if (isButtonClicked(switchButton)) {
+                if (isButtonClicked(switchButton)) {//切换账号
                     user = (User){0};
-                    level = 0;
                     page = PAGE_ENTRY;
-                } else if (isButtonClicked(gameButton)) {
+                } else if (isButtonClicked(gameButton)) {//游戏
                     page = PAGE_LEVEL;
-                } else if (isButtonClicked(rankButton)) {
+                } else if (isButtonClicked(rankButton)) {//排行榜
                     resetRankPage();
                     page = PAGE_RANK;
-                } else if (isButtonClicked(exitButton)) {
+                } else if (isButtonClicked(exitButton)) {//退出
                     running = 0;
                 }
                 break;
 
             case PAGE_LEVEL:
-                for (i = 0; i < 3; i++) {
-                    levelButton = (Rectangle){250, 180 + i * 80.0f, 300, 48};
-                    if (isButtonClicked(levelButton)) {
-                        level = i + 1;
-                        if (startGame(level)) {
-                            page = PAGE_GAME;
-                        }
-                        break;
-                    }
+                if (isButtonClicked(easyButton)) {//初级
+                    level = 1;
                 }
-                if (page == PAGE_LEVEL && isButtonClicked(backButton)) {
+                else if (isButtonClicked(mediumButton)) {//中级
+                    level = 2;
+                }
+                else if (isButtonClicked(hardButton)) {//高级
+                    level = 3;
+                }
+                else if (isButtonClicked(backButton)) {//返回
                     page = PAGE_MENU;
+                    break;
                 }
+                else {
+                    break;  // 没有点击任何按钮
+                }
+
+                startGame(level);
+                page = PAGE_GAME;
                 break;
 
             case PAGE_GAME:
                 gameResult = updateGame(&seconds);
-                if (gameResult == 1) {
-                    // 作弊局只显示结算，不向排行榜提交成绩
+                if (gameResult == 1) {//游戏通关
                     saveResult = 0;
-                    if (getGameCheats() == 0) {
+                    if (!getGameCheats()) {// 作弊局只显示结算，不向排行榜提交成绩
                         saveResult = saveScore(user.name, level, seconds);
                     }
                     page = PAGE_RESULT;
-                } else if (gameResult == 2) {
+                } else if (gameResult == 2) {//游戏中途点击返回按钮
                     page = PAGE_MENU;
                 }
                 break;
 
             case PAGE_RESULT:
-                if (isButtonClicked(backButton)) {
+                if (isButtonClicked(backButton)) {//返回菜单
                     page = PAGE_MENU;
-                } else if (isButtonClicked(rankButton)) {
+                } else if (isButtonClicked(rankButton)) {//查看排行榜
                     resetRankPage();
                     page = PAGE_RANK;
                 }
                 break;
 
             case PAGE_RANK:
-                if (updateRankPage() == 1) {
+                if (updateRankPage()) {
                     page = PAGE_MENU;
                 }
                 break;
@@ -226,7 +215,7 @@ int main(void)
  */
 static void drawCentered(Font font, const char text[], float y, float size)
 {
-    Vector2 width = MeasureTextEx(font, text, size, 1);
+    Vector2 width = MeasureTextEx(font, text, size, 1);  // 文字绘制后的宽和高，用来计算水平居中位置
     DrawTextEx(font, text, (Vector2){(800 - width.x) / 2, y}, size, 1, DARKGRAY);
 }
 
@@ -249,7 +238,6 @@ static void drawMenu(Font font, int loggedIn)
         drawCentered(font, "请先登录", 285, 24);
     }
     drawButton(exitButton, "退出", font);
-    drawCentered(font, "GUI preview - account and game integration pending", 550, 16);
 }
 
 /*
@@ -261,8 +249,8 @@ static void drawMenu(Font font, int loggedIn)
 static void drawLevels(Font font)
 {
     drawCentered(font, "选择难度", 80, 36);
-    drawButton((Rectangle){250, 180, 300, 48}, "初级 4x4", font);
-    drawButton((Rectangle){250, 260, 300, 48}, "中级 4x5", font);
-    drawButton((Rectangle){250, 340, 300, 48}, "高级 6x6", font);
+    drawButton(easyButton, "初级 4x4", font);
+    drawButton(mediumButton, "中级 4x5", font);
+    drawButton(hardButton, "高级 6x6", font);
     drawButton(backButton, "返回", font);
 }
