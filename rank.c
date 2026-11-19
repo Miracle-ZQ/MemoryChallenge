@@ -36,7 +36,8 @@ static Score g_rank[RANK_LEVELS][RANK_TOP];
 static int   g_count[RANK_LEVELS];
 static int   g_loaded = 0;       // 是否已从文件读过
 static int   g_readError = 0;    // 读取失败时禁止写文件
-static int   g_pageLevel = 1;    // 排行榜当前显示第几档
+static int   g_pageLevel = 1;
+static char  g_player[RANK_NAME];   // 当前玩家名，用于高亮自己那一行    // 排行榜当前显示第几档
 
 static const Rectangle g_backButton = { 40.0f, 520.0f, BTN_W, BTN_H };
 
@@ -244,6 +245,18 @@ int saveScore(const char name[], int level, int seconds)
 }
 
 /*
+ * 功能：记录当前玩家名
+ * 输入：name 为用户名
+ * 输出：保存到 g_player
+ * 返回值：无
+ */
+void setCurrentPlayer(const char name[])
+{
+    strncpy(g_player, name, RANK_NAME - 1);
+    g_player[RANK_NAME - 1] = '\0';
+}
+
+/*
  * 功能：准备排行榜页面
  * 输入：无
  * 输出：默认显示初级，必要时读一次文件
@@ -315,7 +328,7 @@ void drawRankPage(Font font)
     // 标题居中
     w = MeasureTextEx(font, "排行榜", 36.0f, 2.0f).x;
     DrawTextEx(font, "排行榜", (Vector2){ (800.0f - w) / 2.0f, 40.0f },
-               36.0f, 2.0f, (Color){ 30, 40, 55, 255 });
+               36.0f, 2.0f, (Color){ 232, 240, 252, 255 });
 
     // 三个难度按钮，当前档位下面画一条蓝线
     for (level = 1; level <= RANK_LEVELS; level++)
@@ -340,28 +353,32 @@ void drawRankPage(Font font)
     {
         w = MeasureTextEx(font, "暂无成绩", 24.0f, 1.0f).x;
         DrawTextEx(font, "暂无成绩", (Vector2){ (800.0f - w) / 2.0f, 300.0f },
-                   24.0f, 1.0f, (Color){ 120, 125, 135, 255 });
+                   24.0f, 1.0f, (Color){ 185, 198, 218, 255 });
         return;
     }
 
     // 表头
-    DrawTextEx(font, "名次", (Vector2){ 150.0f, 196.0f }, 22.0f, 1.0f, (Color){ 90, 95, 105, 255 });
-    DrawTextEx(font, "用户名", (Vector2){ 250.0f, 196.0f }, 22.0f, 1.0f, (Color){ 90, 95, 105, 255 });
-    DrawTextEx(font, "用时", (Vector2){ 480.0f, 196.0f }, 22.0f, 1.0f, (Color){ 90, 95, 105, 255 });
-    DrawRectangle(130, 226, 420, 1, (Color){ 200, 205, 215, 255 });
+    DrawTextEx(font, "名次", (Vector2){ 150.0f, 196.0f }, 22.0f, 1.0f, (Color){ 185, 198, 218, 255 });
+    DrawTextEx(font, "用户名", (Vector2){ 250.0f, 196.0f }, 22.0f, 1.0f, (Color){ 185, 198, 218, 255 });
+    DrawTextEx(font, "用时", (Vector2){ 480.0f, 196.0f }, 22.0f, 1.0f, (Color){ 185, 198, 218, 255 });
+    DrawRectangle(130, 226, 420, 1, (Color){ 120, 135, 158, 255 });
 
     // 成绩列表
     for (i = 0; i < g_count[k]; i++)
     {
         float y = 244.0f + i * 44.0f;
 
+        // 自己那一行加半透明深蓝底
+        if (strcmp(g_rank[k][i].name, g_player) == 0)
+            DrawRectangle(120, (int)y - 6, 440, 36, (Color){ 60, 110, 180, 120 });
+
         sprintf(text, "%d", i + 1);
-        DrawTextEx(font, text, (Vector2){ 150.0f, y }, 22.0f, 1.0f, (Color){ 30, 40, 55, 255 });
+        DrawTextEx(font, text, (Vector2){ 150.0f, y }, 22.0f, 1.0f, (Color){ 232, 240, 252, 255 });
 
         DrawTextEx(font, g_rank[k][i].name, (Vector2){ 250.0f, y },
-                   22.0f, 1.0f, (Color){ 30, 40, 55, 255 });
+                   22.0f, 1.0f, (Color){ 232, 240, 252, 255 });
 
         sprintf(text, "%d 秒", g_rank[k][i].seconds);
-        DrawTextEx(font, text, (Vector2){ 480.0f, y }, 22.0f, 1.0f, (Color){ 30, 40, 55, 255 });
+        DrawTextEx(font, text, (Vector2){ 480.0f, y }, 22.0f, 1.0f, (Color){ 232, 240, 252, 255 });
     }
 }

@@ -43,4 +43,28 @@ void drawButton(Rectangle bounds, const char text[], Font font);
  */
 Camera2D getUiCamera(void);
 
+/*
+ * 功能：加载三张页面背景图（登录 / 游戏 / 排行榜）
+ * 输入：无，从 assets/bg/ 读取
+ * 输出：纹理加载到模块内部
+ * 返回值：1 成功
+ */
+int loadBackgrounds(void);
+
+/*
+ * 功能：把指定背景铺满整个画面
+ * 输入：index 0=登录 1=游戏 2=排行榜
+ * 输出：拉伸到 800x600 绘制
+ * 返回值：无
+ */
+void drawBackground(int index);
+
+/*
+ * 功能：关闭窗口前释放背景图
+ * 输入：无
+ * 输出：释放纹理
+ * 返回值：无
+ */
+void unloadBackgrounds(void);
+
 #endif

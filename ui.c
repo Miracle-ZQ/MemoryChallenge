@@ -164,3 +164,89 @@ Camera2D getUiCamera(void)//等比放大窗口的函数
 
     return camera;
 }
+
+/* ---------------- 页面背景图 ---------------- */
+
+#define BG_COUNT 3
+
+// 下标和页面一一对应：0 登录页，1 游戏页，2 排行榜
+static const char *BG_PATH[BG_COUNT] = {
+    "assets/bg/account.png",
+    "assets/bg/game.png",
+    "assets/bg/rank.png"
+};
+static Texture2D g_bg[BG_COUNT];
+
+// 登录页动图：所有帧解压后放在内存里，按时间逐帧切换
+#define BG_GIF_PATH "assets/gif/login.gif"
+static Image     g_gif;              // 动图全部帧的像素
+static Texture2D g_gifTex;           // 正在显示的纹理
+static int       g_gifFrames = 0;    // 总帧数
+static int       g_gifFrame  = 0;    // 当前帧
+static double    g_gifLast   = 0;    // 上次换帧时刻
+
+/*
+ * 功能：加载三张背景图和登录页动图
+ * 输入：无
+ * 输出：纹理存进模块内部
+ * 返回值：1 成功
+ */
+int loadBackgrounds(void)
+{
+    int i;
+
+    for (i = 0; i < BG_COUNT; i++)
+        g_bg[i] = LoadTexture(BG_PATH[i]);
+
+    // 登录页动图；文件不存在时纹理 id 为 0，自动沿用静态背景
+    g_gif = LoadImageAnim(BG_GIF_PATH, &g_gifFrames);
+    g_gifTex = LoadTextureFromImage(g_gif);
+    SetTextureFilter(g_gifTex, TEXTURE_FILTER_BILINEAR);
+
+    return 1;
+}
+
+/*
+ * 功能：把指定背景铺满 800x600 画面
+ * 输入：index 是背景编号
+ * 输出：画面背景（登录页播动图）
+ * 返回值：无
+ */
+void drawBackground(int index)
+{
+    Rectangle dst = { 0, 0, 800, 600 };
+    Rectangle src;
+
+    // 登录页有动图就播动图：每 80 毫秒换一帧
+    if (index == 0 && g_gifTex.id != 0) {
+        if (GetTime() - g_gifLast >= 0.08) {
+            g_gifLast = GetTime();
+            g_gifFrame = (g_gifFrame + 1) % g_gifFrames;
+            UpdateTexture(g_gifTex, (unsigned char *)g_gif.data +
+                          g_gifFrame * g_gif.width * g_gif.height * 4);
+        }
+        src = (Rectangle){ 0, 0, (float)g_gif.width, (float)g_gif.height };
+        DrawTexturePro(g_gifTex, src, dst, (Vector2){ 0, 0 }, 0.0f, WHITE);
+        return;
+    }
+
+    src = (Rectangle){ 0, 0, (float)g_bg[index].width, (float)g_bg[index].height };
+    DrawTexturePro(g_bg[index], src, dst, (Vector2){ 0, 0 }, 0.0f, WHITE);
+}
+
+/*
+ * 功能：释放背景图和动图
+ * 输入：无
+ * 输出：纹理全部释放
+ * 返回值：无
+ */
+void unloadBackgrounds(void)
+{
+    int i;
+
+    for (i = 0; i < BG_COUNT; i++)
+        UnloadTexture(g_bg[i]);
+
+    if (g_gifTex.id != 0) UnloadTexture(g_gifTex);
+    if (g_gif.data != NULL) UnloadImage(g_gif);
+}
