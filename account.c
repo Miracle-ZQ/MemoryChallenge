@@ -508,16 +508,10 @@ void resetAccountPage(int registerMode)//registerMode 为 0 显示登录页，�
 int updateAccountPage(User *user)//user:接收登录账号的结构体地址
 {
     Vector2 mouse;  // 本帧鼠标位置，用来判断点中了哪个输入框
-    int focusCount;  // 本次有几个输入框可以切换焦点，登录 2 个、注册 3 个
 
     handleCharInput();  // 先处理字符输入
     handleBackspace();  // 再处理退格删除
 
-    focusCount = (gRegisterMode != 0) ? 3 : 2;  // 注册页多一个确认密码框
-    if (IsKeyPressed(KEY_TAB))  // Tab 依次在输入框之间切换焦点
-    {
-        gFocus = (gFocus + 1) % focusCount;
-    }
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))  // 点输入框切换焦点
     {
         mouse = GetMousePosition();
