@@ -207,14 +207,14 @@ int main(void)
 
         BeginDrawing();
         ClearBackground((Color){245, 248, 252, 255});
-        BeginMode2D(camera);
-
-        // 按页面选背景，再盖一层半透明深色，保证浅色文字可读
+        // 背景和遮罩按真实窗口尺寸画（在相机之外），全屏或宽屏都能铺满
         if (page == PAGE_GAME)      drawBackground(1);
         else if (page == PAGE_RANK) drawBackground(2);
         else                        drawBackground(0);
-        DrawRectangle(0, 0, 800, 600, (Color){ 8, 12, 20, 110 });
+        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
+                      (Color){ 8, 12, 20, 110 });
 
+        BeginMode2D(camera);
         switch (page) {
             case PAGE_ENTRY:
                 drawMenu(font, 0);
