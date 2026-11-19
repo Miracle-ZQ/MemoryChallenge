@@ -55,7 +55,7 @@ void calculateCustomResult(const CustomGameConfig *cfg, int correct,
     r.Tref = r.G * r.T0;
     r.K = exp(r.T / r.T0 - 1.0);
     r.F_H = pow(0.97, reveals);
-    r.B_minus = 0.2 * cfg->k * (elapsed / r.Tref - 1.0);
+    r.B_minus = 0.2 * cfg->k * tanh(elapsed / r.Tref - 1.0);
     double score = r.S * r.B_plus * (1.0 - r.B_minus)
                  * r.F_H / r.K;
     r.finalScore = (int)round(score);
