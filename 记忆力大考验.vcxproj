@@ -143,6 +143,15 @@
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <!-- 把 assets 整个目录复制到输出目录，这样编译完直接就能运行，不用手动拷背景图和字体 -->
+  <ItemGroup>
+    <AssetFiles Include="$(ProjectDir)assets\**\*" />
+  </ItemGroup>
+  <Target Name="CopyAssetsToOutput" AfterTargets="Build">
+    <Copy SourceFiles="@(AssetFiles)" DestinationFiles="@(AssetFiles->'$(OutDir)assets\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <!-- raylib.dll 也要放到 exe 旁边，否则双击运行会提示找不到 dll -->
+    <Copy SourceFiles="$(RaylibDir)lib\raylib.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="Exists('$(RaylibDir)lib\raylib.dll')" />
+  </Target>
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <ItemGroup>
