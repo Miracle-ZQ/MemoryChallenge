@@ -219,9 +219,14 @@ void drawGame(Font font)
         float left = -getUiCamera().offset.x / getUiCamera().zoom + 10;  // 窗口左侧留边换算到界面坐标后的位置
         Rectangle track = {left + 170, 34, layout.revealButton.x - left - 182, 10};  // 倒计时进度条完整的背景区域
         Rectangle progress = track;  // 进度条当前已填充区域，宽度随后按剩余时间缩短
-        progress.width *= getPreviewProgress();
+        float ratio = getPreviewProgress();
+        // 剩余时间少的时候条会变黄、变红
+        Color barColor = ratio > 0.5f ? (Color){ 90, 170, 110, 255 }
+                       : ratio > 0.2f ? (Color){ 225, 170, 60, 255 }
+                                     : (Color){ 205, 80, 80, 255 };
+        progress.width *= ratio;
         DrawRectangleRec(track, (Color){218, 226, 236, 255});
-        DrawRectangleRec(progress, (Color){65, 125, 190, 255});
+        DrawRectangleRec(progress, barColor);
     }
     for (r = 0; r < rows; r++) {
         for (c = 0; c < cols; c++) {

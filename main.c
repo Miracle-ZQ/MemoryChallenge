@@ -7,6 +7,13 @@
 #include "account.h"
 #include "game.h"
 
+// 界面文字配色：背景图偏暗，所以文字统一用浅色
+#define COLOR_TITLE (Color){ 240, 246, 255, 255 }
+#define COLOR_HINT  (Color){ 190, 202, 220, 255 }
+#define COLOR_OK    (Color){ 120, 220, 160, 255 }
+#define COLOR_WARN  (Color){ 250, 200, 120, 255 }
+#define COLOR_ERROR (Color){ 255, 130, 130, 255 }
+
 // 页面编号只由主函数管理，其他模块通过返回值通知主函数
 typedef enum {
     PAGE_ENTRY,
@@ -31,7 +38,7 @@ static const Rectangle mediumButton = {250, 260, 300, 48};  // 中级
 static const Rectangle hardButton = {250, 340, 300, 48};  // 高级
 
 // 在窗口中居中绘制一行文字
-static void drawCentered(Font font, const char text[], float y, float size);
+static void drawText(Font font, const char text[], float y, float size, Color color);
 // 绘制主菜单
 static void drawMenu(Font font, int loggedIn);
 // 绘制难度选择页
@@ -66,6 +73,7 @@ int main(void)
 
     loadUiResources(&font);//加载字体
     loadGameResources();//加载卡牌
+    loadBackgrounds();//加载页面背景图
 
     while (running && !WindowShouldClose()) {
         camera = getUiCamera();
@@ -102,6 +110,7 @@ int main(void)
                 } else if (isButtonClicked(gameButton)) {//游戏
                     page = PAGE_LEVEL;
                 } else if (isButtonClicked(rankButton)) {//排行榜
+                    setCurrentPlayer(user.name);
                     resetRankPage();
                     page = PAGE_RANK;
                 } else if (isButtonClicked(exitButton)) {//退出
@@ -148,6 +157,7 @@ int main(void)
                 if (isButtonClicked(backButton)) {//返回菜单
                     page = PAGE_MENU;
                 } else if (isButtonClicked(rankButton)) {//查看排行榜
+                    setCurrentPlayer(user.name);
                     resetRankPage();
                     page = PAGE_RANK;
                 }
@@ -163,6 +173,13 @@ int main(void)
         BeginDrawing();
         ClearBackground((Color){245, 248, 252, 255});
         BeginMode2D(camera);
+
+        // 按页面选背景，再盖一层半透明深色，保证浅色文字可读
+        if (page == PAGE_GAME)      drawBackground(1);
+        else if (page == PAGE_RANK) drawBackground(2);
+        else                        drawBackground(0);
+        DrawRectangle(0, 0, 800, 600, (Color){ 8, 12, 20, 110 });
+
         switch (page) {
             case PAGE_ENTRY:
                 drawMenu(font, 0);
@@ -172,7 +189,7 @@ int main(void)
                 break;
             case PAGE_MENU:
                 drawMenu(font, 1);
-                drawCentered(font, TextFormat("当前用户：%s", user.name), 125, 20);
+                drawText(font, TextFormat("当前用户：%s", user.name), 125, 20, COLOR_HINT);
                 break;
             case PAGE_LEVEL:
                 drawLevels(font);
@@ -181,14 +198,19 @@ int main(void)
                 drawGame(font);
                 break;
             case PAGE_RESULT:
-                drawCentered(font, "恭喜通关", 90, 36);
-                drawCentered(font, TextFormat("用时：%d 秒", seconds), 180, 28);
-                drawCentered(font, TextFormat("配对错误：%d 次   作弊：%d 次", getGameMistakes(), getGameCheats()), 215, 20);
+                drawText(font, "恭喜通关", 90, 36, COLOR_TITLE);
+                drawText(font, TextFormat("用时：%d 秒", seconds), 180, 28, COLOR_TITLE);
+                drawText(font, TextFormat("配对错误：%d 次   作弊：%d 次", getGameMistakes(), getGameCheats()), 215, 20, COLOR_HINT);
                 if (getGameCheats() != 0) {
-                    drawCentered(font, "本局使用了亮牌，不计入排行榜", 250, 22);
+                    drawText(font, "本局使用了亮牌，不计入排行榜", 250, 22, COLOR_WARN);
                 } else {
-                    drawCentered(font, saveResult == 1 ? "成绩已保存" :
-                        saveResult == 0 ? "未刷新成绩" : "成绩保存失败", 250, 24);
+                    if (saveResult == 1) {
+                        drawText(font, "成绩已保存", 250, 24, COLOR_OK);
+                    } else if (saveResult == 0) {
+                        drawText(font, "未刷新成绩", 250, 24, COLOR_HINT);
+                    } else {
+                        drawText(font, "成绩保存失败", 250, 24, COLOR_ERROR);
+                    }
                 }
                 drawButton(rankButton, "排行榜", font);
                 drawButton(backButton, "返回", font);
@@ -201,6 +223,7 @@ int main(void)
         EndDrawing();
     }
 
+    unloadBackgrounds();
     unloadUiResources(font);
     CloseWindow();
     return 0;
@@ -212,10 +235,10 @@ int main(void)
  * 输出：屏幕中的文字，不修改页面状态
  * 返回值：无
  */
-static void drawCentered(Font font, const char text[], float y, float size)
+static void drawText(Font font, const char text[], float y, float size, Color color)
 {
     Vector2 width = MeasureTextEx(font, text, size, 1);  // 文字绘制后的宽和高，用来计算水平居中位置
-    DrawTextEx(font, text, (Vector2){(800 - width.x) / 2, y}, size, 1, DARKGRAY);
+    DrawTextEx(font, text, (Vector2){(800 - width.x) / 2, y}, size, 1, color);
 }
 
 /*
@@ -226,7 +249,7 @@ static void drawCentered(Font font, const char text[], float y, float size)
  */
 static void drawMenu(Font font, int loggedIn)
 {
-    drawCentered(font, "记忆力大考验", 70, 40);
+    drawText(font, "记忆力大考验", 70, 40, COLOR_TITLE);
     if (loggedIn) {
         drawButton(switchButton, "切换账号", font);
         drawButton(gameButton, "开始游戏", font);
@@ -234,7 +257,7 @@ static void drawMenu(Font font, int loggedIn)
     } else {
         drawButton(loginButton, "登录", font);
         drawButton(registerButton, "注册", font);
-        drawCentered(font, "请先登录", 285, 24);
+        drawText(font, "请先登录", 285, 24, COLOR_HINT);
     }
     drawButton(exitButton, "退出", font);
 }
@@ -247,7 +270,7 @@ static void drawMenu(Font font, int loggedIn)
  */
 static void drawLevels(Font font)
 {
-    drawCentered(font, "选择难度", 80, 36);
+    drawText(font, "选择难度", 80, 36, COLOR_TITLE);
     drawButton(easyButton, "初级 4x4", font);
     drawButton(mediumButton, "中级 4x5", font);
     drawButton(hardButton, "高级 6x6", font);

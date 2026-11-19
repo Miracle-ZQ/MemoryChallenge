@@ -18,6 +18,14 @@ int saveScore(const char name[], int level, int seconds);
  * 输出：默认选择初级，准备显示成绩或读取错误提示
  * 返回值：无
  */
+/*
+ * 功能：记录当前玩家名，用于在榜单里高亮自己那一行
+ * 输入：name 为用户名
+ * 输出：保存用户名
+ * 返回值：无
+ */
+void setCurrentPlayer(const char name[]);
+
 void resetRankPage(void);
 
 /*
