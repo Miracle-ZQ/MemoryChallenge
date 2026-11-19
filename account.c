@@ -1,18 +1,13 @@
-/*========================================================================
- * 文件名：account.c
- * 功  能：图形版账号模块。负责登录页、注册页的输入处理、账号校验和页面
- *         绘制，账号数据仍然保存在文本文件 users.txt 中，一行一个账号
- * 说  明：本模块只处理“账号页”这一页，不创建窗口、不切换页面、不结束
- *         程序，这些工作都由 main.c 负责。账号用结构体数组保存，不使用
- *         链表，只用标准 C 库和组内公共的 UI 函数
- *         页面函数每帧调用一次，不在这里写等待输入的循环
- *========================================================================*/
+/*图形版账号模块。负责登录页、注册页的输入处理、账号校验和页面绘制，
+账号数据保存在文本文件 users.txt 中。
+注册页要求二次输入密码，并且密码强度至少为中等才允许注册成功。
+*/
 
 #ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS  // 允许使用 fopen 等传统 C 函数，避免 VS2022 报安全警告
+#define _CRT_SECURE_NO_WARNINGS 
 #endif
-#include <stdio.h>  // fopen、fprintf、fscanf 等文件读写函数
-#include <string.h>  // strcmp、strlen、strncpy 等字符串函数
+#include <stdio.h>
+#include <string.h>
 #include <ctype.h>  // islower、isupper、isdigit 字符类别判断
 #include <errno.h>  // errno、ENOENT 用来区分“文件还不存在”
 #include "account.h"  // 本模块的结构体与三个页面函数声明
@@ -21,56 +16,49 @@
 #define USERS_FILE "users.txt"  // 账号文件名，与程序在同一目录
 #define USER_MAX 100  // 一次最多读入内存的账号个数
 
-/*------------------------------------------------------------------------
- * 账号页的布局常量。update 和 draw 都从这里取坐标，保证按钮和输入框的
- * 矩形区域完全一致，不会出现“画在这里、点在那里”的问题
- * 窗口初稿固定 800×600
- *------------------------------------------------------------------------*/
-#define PAGE_CENTER_X    400.0f  // 窗口水平中心，标题和提示都按它居中
+/*账号页的布局常量。
+*/
+#define PAGE_CENTER_X    400.0f  // 窗口水平中心，标题和提示按它居中
 #define PANEL_X          140.0f  // 中间白色面板的左上角横坐标
-#define PANEL_Y           60.0f  // 中间白色面板的左上角纵坐标
+#define PANEL_Y           26.0f  // 中间白色面板的左上角纵坐标
 #define PANEL_W          520.0f  // 面板宽度
-#define PANEL_H          480.0f  // 面板高度
+#define PANEL_H          548.0f  // 面板高度
 #define INPUT_X          220.0f  // 输入框左边缘
 #define INPUT_W          360.0f  // 输入框宽度
-#define INPUT_H           56.0f  // 输入框高度
-#define NAME_BOX_Y       190.0f  // 用户名输入框上边缘
-#define PASSWORD_BOX_Y   280.0f  // 密码输入框上边缘
-#define BUTTON_Y         372.0f  // 普通按钮上边缘
+#define INPUT_H           54.0f  // 输入框高度
+#define NAME_BOX_Y       150.0f  // 用户名输入框上边缘
+#define PASSWORD_BOX_Y   238.0f  // 密码输入框上边缘
+#define CONFIRM_BOX_Y    344.0f  // 确认密码框上边缘，只有注册页才画
+#define STRENGTH_Y       296.0f  // 密码强度提示的纵坐标
+#define BUTTON_Y         414.0f  // 普通按钮上边缘
 #define BUTTON_W         170.0f  // 普通按钮宽度
 #define BUTTON_H          52.0f  // 按钮高度
 #define BUTTON_LEFT_X    220.0f  // 左边那个按钮的左边缘
 #define BUTTON_RIGHT_X   410.0f  // 右边那个按钮的左边缘
-#define CONFIRM_W        200.0f  // 弱密码确认按钮宽度
-#define CONFIRM_LEFT_X   180.0f  // “继续注册”按钮左边缘
-#define CONFIRM_RIGHT_X  420.0f  // “返回修改”按钮左边缘
-#define MESSAGE_Y        444.0f  // 提示文字的纵坐标
+#define MESSAGE_Y        482.0f  // 提示文字的纵坐标
+#define FOOT_Y           520.0f  // 页脚说明文字的纵坐标
 
-// 固定区域由输入判断和绘制共用，不需要每次调用函数构造
+// 固定区域的常量，更新和绘制都用这几个矩形，保证点到的位置和画出来的位置一致
 static const Rectangle nameBox = {INPUT_X, NAME_BOX_Y, INPUT_W, INPUT_H};
 static const Rectangle passwordBox = {INPUT_X, PASSWORD_BOX_Y, INPUT_W, INPUT_H};
+static const Rectangle confirmBox = {INPUT_X, CONFIRM_BOX_Y, INPUT_W, INPUT_H};
 static const Rectangle primaryButton = {BUTTON_LEFT_X, BUTTON_Y, BUTTON_W, BUTTON_H};
 static const Rectangle backButton = {BUTTON_RIGHT_X, BUTTON_Y, BUTTON_W, BUTTON_H};
-static const Rectangle confirmButton = {CONFIRM_LEFT_X, BUTTON_Y, CONFIRM_W, BUTTON_H};
-static const Rectangle cancelButton = {CONFIRM_RIGHT_X, BUTTON_Y, CONFIRM_W, BUTTON_H};
 
-/*------------------------------------------------------------------------
- * 本模块内部保存的页面状态。全部是 static，调用方看不到，也不需要关心
- *------------------------------------------------------------------------*/
+//状态变量，本模块内部保存的页面状态
 static char  gName[NAME_MAX];  // 用户名输入框里的字符串
 static int   gNameLength;  // 用户名已经输入的字节数
-static char  gPassword[PASSWORD_MAX];  // 密码输入框里的字符串，不直接绘制
+static char  gPassword[PASSWORD_MAX];  // 密码输入框里的字符串
 static int   gPasswordLength;  // 密码已经输入的字节数
-static int   gFocus;  // 当前焦点：0 用户名框，1 密码框
+static char  gConfirm[PASSWORD_MAX];  // 确认密码框里的字符串，只有注册页用
+static int   gConfirmLength;  // 确认密码已经输入的字节数
+static int   gFocus;  // 当前焦点：0 用户名框，1 密码框，2 确认密码框
 static int   gRegisterMode;  // 当前表单：0 登录，1 注册
 static char  gMessage[128];  // 页面底部的提示文字
 static int   gMessageIsError;  // 提示文字颜色：1 红色错误，0 绿色
-static int   gConfirmWeak;  // 1 表示正在等用户确认弱密码注册
 static int   gLoadError;  // 1 表示读 users.txt 时发生了错误
 
-/*------------------------------------------------------------------------
- * 页面用到的颜色。定义成 static const，避免在绘制函数里写一堆数字
- *------------------------------------------------------------------------*/
+//页面用到的颜色
 static const Color COLOR_PANEL       = { 248, 249, 251, 255 };  // 面板底色
 static const Color COLOR_PANEL_LINE  = { 205, 211, 219, 255 };  // 面板边框
 static const Color COLOR_BOX_FILL    = { 255, 255, 255, 255 };  // 输入框底色
@@ -85,7 +73,7 @@ static const Color COLOR_ERROR       = { 176,  48,  48, 255 };  // 错误提示
 static const Color COLOR_HINT        = { 110, 118, 130, 255 };  // 次要说明
 static const Color COLOR_FOOT        = { 130, 136, 148, 255 };  // 页脚说明
 
-// 以下是本文件内部使用的函数，只在本文件可见
+// 以下是本文件内部使用的函数
 static int loadUsers(User users[], int maxCount);
 static int findUser(const User users[], int count, const char name[]);
 static void setMessage(const char *text, int isError);
@@ -104,15 +92,12 @@ static void drawInputBox(Font font, Rectangle box, const char *text,
                          const char *placeholder, int focused);
 static void drawStrengthHint(Font font);
 
-/*------------------------------------------------------------------------
- * 函数：checkPassword
- * 功  能：检测密码安全等级，注册时用来判断要不要弹弱密码确认
- * 输  入：password —— 待检测的密码字符串，以 '\0' 结尾
- * 输  出：不修改密码内容
- * 返回值：0 不安全（不足 6 位，或只有一类字符）；1 中等（两类字符）；
- *         2 安全（三类及以上字符）。数字、大写字母、小写字母、其它符号
- *         分别算作四类不同的字符
- *------------------------------------------------------------------------*/
+/*checkPassword函数,检测密码安全等级。
+返回值：0 不安全（不足 6 位，或只有一类字符）；1 中等（两类字符）；
+2 安全（三类及以上字符）。数字、大写字母、小写字母、其它符号分别算作四类不同的字符
+被registerCurrentForm函数引用：注册时用来判断要不要弹弱密码确认
+被drawStrengthHint函数引用：显示代码安全等级时用来判断
+*/
 static int checkPassword(char password[])
 {
     int length;  // 密码的字符个数（不含结束符）
@@ -122,7 +107,7 @@ static int checkPassword(char password[])
     int hasOther = 0;  // 是否含其它符号：1 有，0 无
     int kinds;  // 密码中实际出现的字符种类数（0～4）
     int i;  // 扫描密码用的下标
-    unsigned char ch;  // 当前字符，用无符号类型可避免 ctype 越界
+    unsigned char ch;  // 当前字符
 
     length = (int)strlen(password);  // 取密码长度
     if (length < 6)  // 长度不足 6 位一律不安全
@@ -163,14 +148,9 @@ static int checkPassword(char password[])
     return 2;  // 三类及以上：安全
 }
 
-/*------------------------------------------------------------------------
- * 函数：registerUser
- * 功  能：把新用户追加写入 users.txt，一行一个“用户名 密码”
- * 输  入：user —— 已经填好用户名和密码的用户结构体
- * 输  出：文件末尾多出一行记录；用户名重复或读写失败时不写文件
- * 返回值：1 注册成功；0 用户名重复、参数为空或文件读写失败
- * 说  明：写入和关闭都要成功才返回 1，避免“显示成功但没存下”
- *------------------------------------------------------------------------*/
+/*registerUser函数，把新用户追加写入 users.txt，一行一个“用户名 密码”
+返回值：1 注册成功；0 用户名重复、参数为空或文件读写失败
+*/
 static int registerUser(User user)
 {
     FILE *fp;  // 指向 users.txt 的文件指针
@@ -194,14 +174,9 @@ static int registerUser(User user)
     return 1;  // 注册成功
 }
 
-/*------------------------------------------------------------------------
- * 函数：loginUser
- * 功  能：验证用户名和密码是否与账号文件中的某一行完全一致
- * 输  入：user —— 待验证的用户，用户名密码都已填好
- * 输  出：不修改任何账号数据
- * 返回值：1 两项都匹配，登录成功；0 用户名不存在或密码错误
- * 说  明：先把文件读进结构体数组，再逐个比较，不使用链表
- *------------------------------------------------------------------------*/
+/*loginUser函数：验证用户名和密码是否与账号文件中的某一行完全一致
+返回值：1 两项都匹配，登录成功；0 用户名不存在或密码错误
+*/
 static int loginUser(User user)
 {
     User users[USER_MAX];  // 从文件读入的账号数组
@@ -221,17 +196,11 @@ static int loginUser(User user)
     return 0;  // 用户名不存在或密码错误
 }
 
-/*------------------------------------------------------------------------
- * 函数：loadUsers
- * 功  能：把 users.txt 中的账号读入结构体数组
- * 输  入：users —— 接收账号的数组，由调用者提供；
- *         maxCount —— 数组最多能装下的账号个数
- * 输  出：把账号写进 users 数组；同时更新 gLoadError 标记读取是否出错
- * 返回值：实际读入的账号个数；文件不存在时返回 0（首次运行视为空表）
- * 说  明："%31s %63s" 的宽度正好对应 name 的 31 字节和 password 的
- *         63 字节，可以防止超长字符串把数组写坏
- *------------------------------------------------------------------------*/
-static int loadUsers(User users[], int maxCount)
+/*loadUsers函数：把 users.txt 中的账号读入结构体数组，同时更新 gLoadError 标记读取是否出错
+返回值：实际读入的账号个数；文件不存在时返回 0（首次运行视为空表）
+*/
+static int loadUsers(User users[], int maxCount)//users：接收账号的数组 
+                                                //maxCount：数组最多能装下的账号个数
 {
     FILE *fp;  // 指向 users.txt 的文件指针
     int count = 0;  // 已经读入的账号个数
@@ -251,6 +220,7 @@ static int loadUsers(User users[], int maxCount)
     // 每次读两个字段，读到文件末尾或数组装满就停止
     while (count < maxCount &&
            fscanf(fp, "%31s %63s", users[count].name, users[count].password) == 2)
+    //"%31s %63s" 对应 name 的 31 字节和 password 的63 字节，防止超长字符串损坏数组
     {
         count++;
     }
@@ -264,14 +234,11 @@ static int loadUsers(User users[], int maxCount)
     return count;
 }
 
-/*------------------------------------------------------------------------
- * 函数：findUser
- * 功  能：在已经读入的账号数组里按用户名查找
- * 输  入：users、count —— 账号数组和它的有效长度；name —— 要找的用户名
- * 输  出：不修改数组
- * 返回值：找到时返回该账号在数组中的下标（从 0 开始），找不到返回 -1
- *------------------------------------------------------------------------*/
-static int findUser(const User users[], int count, const char name[])
+/* findUser函数，在已经读入的账号数组里按用户名查找
+返回值：找到时返回该账号在数组中的下标（从 0 开始），找不到返回 -1
+*/
+static int findUser(const User users[], int count, const char name[])//users、count：账号数组和它的有效长度
+                                                                     //name：要找的用户名
 {
     int i;  // 遍历数组用的下标
 
@@ -285,67 +252,67 @@ static int findUser(const User users[], int count, const char name[])
     return -1;
 }
 
-/*------------------------------------------------------------------------
- * 函数：setMessage
- * 功  能：设置页面底部的提示文字和颜色
- * 输  入：text —— 提示内容；isError —— 1 表示红色错误，0 表示绿色正常
- * 输  出：更新 gMessage 和 gMessageIsError
- * 返回值：无
- *------------------------------------------------------------------------*/
-static void setMessage(const char *text, int isError)
+/*setMessage函数，设置页面底部的提示文字和颜色，输出时更新 gMessage 和 gMessageIsError
+*/
+static void setMessage(const char *text, int isError)//text：提示内容；isError：1 表示红色错误，0 表示绿色正常
 {
     strncpy(gMessage, text, sizeof(gMessage) - 1);  // 留出结束符的位置
     gMessage[sizeof(gMessage) - 1] = '\0';
     gMessageIsError = (isError != 0) ? 1 : 0;
 }
 
-/*------------------------------------------------------------------------
- * 函数：clearInputs
- * 功  能：把两个输入框清空，焦点回到用户名框，同时取消弱密码确认状态
- * 输  入：无
- * 输  出：清空 gName、gPassword 和它们的长度，重置 gFocus、gConfirmWeak
- * 返回值：无
- *------------------------------------------------------------------------*/
+/*clearInputs函数，把三个输入框清空(清空 gName、gPassword、gConfirm 和它们的长度)，
+焦点回到用户名框
+*/
 static void clearInputs(void)
 {
     gName[0] = '\0';  // 用户名框清空
     gNameLength = 0;
     gPassword[0] = '\0';  // 密码框清空
     gPasswordLength = 0;
+    gConfirm[0] = '\0';  // 确认密码框清空
+    gConfirmLength = 0;
     gFocus = 0;  // 焦点回到用户名框
-    gConfirmWeak = 0;  // 取消弱密码确认
 }
 
-/*------------------------------------------------------------------------
- * 函数：buildUserFromForm
- * 功  能：把两个输入框的内容复制成一个 User 结构体
- * 输  入：无
- * 输  出：把用户名和密码写进 *user
- * 返回值：无
- * 说  明：输入长度已经由输入函数限制，这里再用 strncpy 兜一次底
- *------------------------------------------------------------------------*/
+/*buildUserFromForm函数，把两个输入框的内容复制成一个 User 结构体
+输出时把用户名和密码写进 *user
+*/
 static void buildUserFromForm(User *user)
 {
-    strcpy(user->name, gName);  // 输入长度已在输入时限制，直接复制即可
+    strcpy(user->name, gName); 
     strcpy(user->password, gPassword);
 }
 
-/*------------------------------------------------------------------------
- * 函数：handleCharInput
- * 功  能：取出这一帧已经排队的按键字符，写进当前有焦点的输入框
- * 输  入：无（字符来自 raylib 的按键队列）
- * 输  出：更新 gName/gPassword 及其长度
- * 返回值：无
- * 说  明：初稿只接受可打印 ASCII 字符（33～126），空格、控制字符、中文
- *         输入法产生的字符都忽略；两个框各自有长度上限，末尾始终留 '\0'
- *         这个循环只处理本帧已有的字符，不会阻塞等待用户输入
- *------------------------------------------------------------------------*/
+/*handleCharInput函数，取出这一帧已经排队的按键字符，写进当前有焦点的输入框
+输出时更新 gName/gPassword/gConfirm 及其长度
+只接受可打印 ASCII 字符（33～126），空格、控制字符、中文
+*/
 static void handleCharInput(void)
 {
     int code;  // 本帧读到的一个字符编码，0 表示队列已空
-    char *text = (gFocus == 0) ? gName : gPassword;  // 当前有焦点的输入框
-    int *length = (gFocus == 0) ? &gNameLength : &gPasswordLength;  // 框里的长度
-    int limit = (gFocus == 0) ? NAME_MAX - 1 : PASSWORD_MAX - 1;  // 框的长度上限
+    char *text;  // 当前有焦点的输入框
+    int *length;  // 当前输入框已经输入的字节数
+    int limit;  // 当前输入框的长度上限，要留一位给结束符
+
+    if (gFocus == 0)
+    {
+        text = gName;
+        length = &gNameLength;
+        limit = NAME_MAX - 1;
+    }
+    else if (gFocus == 1)
+    {
+        text = gPassword;
+        length = &gPasswordLength;
+        limit = PASSWORD_MAX - 1;
+    }
+    else
+    {
+        text = gConfirm;
+        length = &gConfirmLength;
+        limit = PASSWORD_MAX - 1;
+    }
 
     while ((code = GetCharPressed()) > 0)
     {
@@ -360,18 +327,29 @@ static void handleCharInput(void)
     }
 }
 
-/*------------------------------------------------------------------------
- * 函数：handleBackspace
- * 功  能：按下退格键时删掉当前焦点框末尾的一个字符
- * 输  入：无
- * 输  出：更新对应输入框的内容和长度
- * 返回值：无
- * 说  明：框里已经是空串时什么也不做，不会越界
- *------------------------------------------------------------------------*/
+/*handleBackspace函数，按下退格键时删掉当前焦点框末尾的一个字符
+输出时更新对应输入框的内容和长度
+*/
 static void handleBackspace(void)
 {
-    char *text = (gFocus == 0) ? gName : gPassword;  // 当前有焦点的输入框
-    int *length = (gFocus == 0) ? &gNameLength : &gPasswordLength;  // 框里的长度
+    char *text;  // 当前有焦点的输入框
+    int *length;  // 当前输入框已经输入的字节数
+
+    if (gFocus == 0)
+    {
+        text = gName;
+        length = &gNameLength;
+    }
+    else if (gFocus == 1)
+    {
+        text = gPassword;
+        length = &gPasswordLength;
+    }
+    else
+    {
+        text = gConfirm;
+        length = &gConfirmLength;
+    }
 
     if (!IsKeyPressed(KEY_BACKSPACE) || *length <= 0)  // 没按退格或框已空
     {
@@ -381,14 +359,10 @@ static void handleBackspace(void)
     text[*length] = '\0';
 }
 
-/*------------------------------------------------------------------------
- * 函数：tryLogin
- * 功  能：用输入框里的用户名和密码做一次登录校验
- * 输  入：user —— 登录成功后接收账号的结构体地址
- * 输  出：只在校验通过时把用户名和密码写入 *user，失败时不改动 *user
- * 返回值：1 登录成功；0 留在账号页（空输入、密码错误或文件出错）
- *------------------------------------------------------------------------*/
-static int tryLogin(User *user)
+/*tryLogin函数，用输入框里的用户名和密码做一次登录校验
+返回值：1 登录成功；0 留在账号页（空输入、密码错误或文件出错）
+*/
+static int tryLogin(User *user)//user：登录成功后接收账号的结构体地址
 {
     User input;  // 本次尝试登录的账号
 
@@ -421,15 +395,12 @@ static int tryLogin(User *user)
     return 0;
 }
 
-/*------------------------------------------------------------------------
- * 函数：registerCurrentForm
- * 功  能：用注册表单里的内容做一次注册，先做空值、重名、容量和密码强度
- *         检查，必要时进入弱密码确认状态
- * 输  入：无
- * 输  出：可能在页面上显示提示，或把 gConfirmWeak 置 1 等待用户确认
- * 返回值：0 留在注册页（包括等待确认的情况）
- * 说  明：确认前不写文件；用户确认后再调用 saveCurrentUser 真正写入
- *------------------------------------------------------------------------*/
+/*registerCurrentForm函数，用注册表单里的内容做一次注册
+先检查空值、两次密码是否一致、密码强度，再检查重名和账号数量
+密码强度不足时直接拒绝，用户必须把密码改到中等及以上才能注册成功
+输出时可能在页面上显示提示，并把焦点移到需要修改的输入框
+返回值：0 始终留在注册页（注册成功由 saveCurrentUser 切换成登录表单）
+*/
 static int registerCurrentForm(void)
 {
     User users[USER_MAX];  // 用来数一下已经有多少个账号
@@ -449,10 +420,32 @@ static int registerCurrentForm(void)
         gFocus = 1;
         return 0;
     }
+    if (gConfirmLength == 0)  // 3. 确认密码不能为空
+    {
+        setMessage("请再输一次密码", 1);
+        gFocus = 2;
+        return 0;
+    }
+    if (strcmp(gPassword, gConfirm) != 0)  // 4. 两次输入的密码必须一样
+    {
+        gConfirm[0] = '\0';  // 清掉确认框，让用户对着密码框重输一遍
+        gConfirmLength = 0;
+        setMessage("密码不对，请重输", 1);
+        gFocus = 2;
+        return 0;
+    }
 
     buildUserFromForm(&newUser);
 
-    // 3/4. 只读一次账号文件，同时完成查重和数量检查
+    strength = checkPassword(newUser.password);  // 5. 弱密码直接拒绝，不写文件
+    if (strength == 0)
+    {
+        setMessage("密码强度不足，请修改密码", 1);
+        gFocus = 1;
+        return 0;
+    }
+
+    // 6/7. 只读一次账号文件，同时完成查重和数量检查
     count = loadUsers(users, USER_MAX);
     if (gLoadError != 0)
     {
@@ -466,31 +459,19 @@ static int registerCurrentForm(void)
         return 0;
     }
     if (count >= USER_MAX)
-    if (count >= USER_MAX)
     {
         setMessage("账号数量已达上限，无法再注册", 1);
         return 0;
     }
 
-    strength = checkPassword(newUser.password);  // 5. 密码强度检查
-    if (strength == 0)
-    {
-        gConfirmWeak = 1;  // 进入确认状态，先不写文件
-        setMessage("密码强度不足，是否仍要注册？", 1);
-        return 0;
-    }
-
-    return saveCurrentUser();  // 中等及以上直接注册
+    return saveCurrentUser();  // 中等及以上才真正写入文件
 }
 
-/*------------------------------------------------------------------------
- * 函数：saveCurrentUser
- * 功  能：把表单里的账号真正写入 users.txt，成功后就切回登录表单
- * 输  入：无
- * 输  出：写文件；成功后换成登录表单并提示“注册成功，请登录”
- * 返回值：0 始终留在账号页（注册成功后也不自动登录）
- * 说  明：写入和关闭都由 registerUser 负责检查，失败时明确提示
- *------------------------------------------------------------------------*/
+/*saveCurrentUser函数，把表单里的账号真正写入 users.txt，
+成功后换成登录表单并提示“注册成功，请登录”
+返回值：0 始终留在账号页（注册成功后也不自动登录）
+写入和关闭由 registerUser 负责检查，失败时明确提示
+*/
 static int saveCurrentUser(void)
 {
     User newUser;  // 本次要写入文件的账号
@@ -504,19 +485,14 @@ static int saveCurrentUser(void)
         return 0;
     }
 
-    gConfirmWeak = 0;
     setMessage("注册失败：账号文件写入失败", 1);
     return 0;
 }
 
-/*------------------------------------------------------------------------
- * 函数：resetAccountPage
- * 功  能：进入账号页前把页面恢复成初始状态（接口说明见 account.h）
- * 输  入：registerMode 为 0 显示登录页，为 1 显示注册页
- * 输  出：清空输入框和提示，重置焦点与弱密码确认状态
- * 返回值：无
- *------------------------------------------------------------------------*/
-void resetAccountPage(int registerMode)
+/*resetAccountPage函数，进入账号页前把页面恢复成初始状态（接口说明见 account.h）:
+清空输入框和提示，重置焦点与弱密码确认状态
+*/
+void resetAccountPage(int registerMode)//registerMode 为 0 显示登录页，为 1 显示注册页
 {
     gRegisterMode = (registerMode != 0) ? 1 : 0;  // 记住本次是登录还是注册
     clearInputs();  // 输入框和焦点复位
@@ -524,41 +500,23 @@ void resetAccountPage(int registerMode)
     gMessageIsError = 0;
 }
 
-/*------------------------------------------------------------------------
- * 函数：updateAccountPage
- * 功  能：处理这一帧的输入和点击，完成登录或注册（接口说明见 account.h）
- * 输  入：user —— 接收登录账号的结构体地址
- * 输  出：只有登录成功时把账号写入 *user
- * 返回值：0 留在账号页；1 登录成功；2 点了返回
- * 说  明：每帧只处理一次，点击后由 main.c 决定是否切换页面
- *------------------------------------------------------------------------*/
-int updateAccountPage(User *user)
+/*updateAccountPage函数,处理这一帧的输入和点击，完成登录或注册（接口说明见 account.h）
+输出：只有登录成功时把账号写入 *user
+返回值：0 留在账号页；1 登录成功；2 点了返回
+说明：点击后由 main.c 决定是否切换页面
+ */
+int updateAccountPage(User *user)//user:接收登录账号的结构体地址
 {
     Vector2 mouse;  // 本帧鼠标位置，用来判断点中了哪个输入框
-
-    // 弱密码确认状态下，只响应“继续注册”和“返回修改”两个按钮
-    if (gConfirmWeak != 0)
-    {
-        if (isButtonClicked(confirmButton) != 0)
-        {
-            gConfirmWeak = 0;
-            return saveCurrentUser();  // 用户确认，真正写入文件
-        }
-        if (isButtonClicked(cancelButton) != 0)
-        {
-            gConfirmWeak = 0;  // 取消确认，什么也不写
-            setMessage("请修改密码后再注册", 1);
-            gFocus = 1;
-        }
-        return 0;
-    }
+    int focusCount;  // 本次有几个输入框可以切换焦点，登录 2 个、注册 3 个
 
     handleCharInput();  // 先处理字符输入
     handleBackspace();  // 再处理退格删除
 
-    if (IsKeyPressed(KEY_TAB))  // Tab 在两个框之间切换焦点
+    focusCount = (gRegisterMode != 0) ? 3 : 2;  // 注册页多一个确认密码框
+    if (IsKeyPressed(KEY_TAB))  // Tab 依次在输入框之间切换焦点
     {
-        gFocus = 1 - gFocus;
+        gFocus = (gFocus + 1) % focusCount;
     }
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))  // 点输入框切换焦点
     {
@@ -570,6 +528,10 @@ int updateAccountPage(User *user)
         else if (CheckCollisionPointRec(mouse, passwordBox))
         {
             gFocus = 1;
+        }
+        else if (gRegisterMode != 0 && CheckCollisionPointRec(mouse, confirmBox))
+        {
+            gFocus = 2;  // 确认密码框只在注册页存在
         }
     }
 
@@ -591,28 +553,18 @@ int updateAccountPage(User *user)
     return 0;  // 本帧没有完成什么，继续留在账号页
 }
 
-/*------------------------------------------------------------------------
- * 函数：drawTextAt
- * 功  能：从指定位置开始画一行文字，统一字体大小和字间距
- * 输  入：font —— 中文字体；text —— 文字；x、y —— 左上角坐标；
- *         fontSize —— 字号；color —— 颜色
- * 输  出：只绘制，不修改任何状态
- * 返回值：无
- *------------------------------------------------------------------------*/
+/*drawTextAt函数,从指定位置开始画一行文字，统一字体大小和字间距
+输入：font:中文字体；text:文字；x、y:左上角坐标；fontSize:字号；color:颜色
+*/
 static void drawTextAt(Font font, const char *text, float x, float y, int fontSize,
                        Color color)
 {
     DrawTextEx(font, text, (Vector2){x, y}, (float)fontSize, 1.0f, color);
 }
 
-/*------------------------------------------------------------------------
- * 函数：drawTextCentered
- * 功  能：把一行文字按水平中心居中绘制
- * 输  入：font —— 中文字体；text —— 文字；centerX —— 中心横坐标；
- *         y —— 上边缘纵坐标；fontSize —— 字号；color —— 颜色
- * 输  出：只绘制，不修改任何状态
- * 返回值：无
- *------------------------------------------------------------------------*/
+/*drawTextCentered函数,把一行文字按水平中心居中绘制
+输入：font：中文字体；text：文字；centerX：中心横坐标；y：上边缘纵坐标；fontSize：字号；color：颜色
+*/
 static void drawTextCentered(Font font, const char *text, float centerX, float y,
                              int fontSize, Color color)
 {
@@ -622,15 +574,10 @@ static void drawTextCentered(Font font, const char *text, float centerX, float y
                (float)fontSize, 1.0f, color);
 }
 
-/*------------------------------------------------------------------------
- * 函数：drawInputBox
- * 功  能：画一个输入框：底色、边框、里面的文字，有焦点时再加一条光标
- * 输  入：font —— 中文字体；box —— 输入框矩形；text —— 要显示的内容
- *         （密码已经换成星号）；placeholder —— 空框时的灰色提示；
- *         focused —— 1 表示这个框正在编辑
- * 输  出：只绘制
- * 返回值：无
- *------------------------------------------------------------------------*/
+/*drawInputBox函数，画一个输入框：底色、边框、里面的文字，有焦点时再加一条光标
+输入：font：中文字体；box：输入框矩形；text：要显示的内容（密码已经换成星号）；
+placeholder：空框时的灰色提示；focused：1 表示这个框正在编辑
+*/
 static void drawInputBox(Font font, Rectangle box, const char *text,
                          const char *placeholder, int focused)
 {
@@ -680,15 +627,9 @@ static void drawInputBox(Font font, Rectangle box, const char *text,
     EndScissorMode();
 }
 
-/*------------------------------------------------------------------------
- * 函数：drawStrengthHint
- * 功  能：在注册页显示当前密码的安全等级，边输入边变化
- * 输  入：font —— 中文字体
- * 输  出：只绘制一行提示文字
- * 返回值：无
- * 说  明：用的是和注册校验同一个 checkPassword，提示和实际判断不会不一致
- *------------------------------------------------------------------------*/
-static void drawStrengthHint(Font font)
+/*drawStrengthHint函数，在注册页显示当前密码的安全等级，边输入边变化
+*/
+static void drawStrengthHint(Font font)//font：中文字体
 {
     int strength;  // 密码安全等级 0/1/2
     const char *text;  // 要显示的提示文字
@@ -696,7 +637,7 @@ static void drawStrengthHint(Font font)
 
     if (gPasswordLength == 0)
     {
-        drawTextAt(font, "密码强度：尚未输入", INPUT_X, 342.0f, 18, COLOR_HINT);
+        drawTextAt(font, "密码强度：尚未输入", INPUT_X, STRENGTH_Y, 16, COLOR_HINT);
         return;
     }
 
@@ -716,67 +657,58 @@ static void drawStrengthHint(Font font)
         text = "密码强度：安全（包含三类及以上字符）";
         color = COLOR_OK;
     }
-    drawTextAt(font, text, INPUT_X, 342.0f, 18, color);
+    drawTextAt(font, text, INPUT_X, STRENGTH_Y, 16, color);
 }
 
-/*------------------------------------------------------------------------
- * 函数：drawAccountPage
- * 功  能：把整个账号页画出来（接口说明见 account.h）
- * 输  入：font —— 已经加载好中文字形的字体，由 main.c 传入
- * 输  出：只绘制面板、标题、输入框、按钮和提示，不读文件、不改状态
- * 返回值：无
- * 说  明：密码框里画的是星号，原密码不会出现在屏幕上
- *------------------------------------------------------------------------*/
-void drawAccountPage(Font font)
+/*drawAccountPage函数，把整个账号页画出来（接口说明见 account.h）
+*/
+void drawAccountPage(Font font)//font：已经加载好中文字形的字体，由 main.c 传入
 {
     Rectangle panel = {PANEL_X, PANEL_Y, PANEL_W, PANEL_H};  // 中间面板
     char masked[PASSWORD_MAX];  // 密码换成星号后的字符串
+    char maskedConfirm[PASSWORD_MAX];  // 确认密码换成星号后的字符串
 
     DrawRectangleRec(panel, COLOR_PANEL);  // 面板底色
     DrawRectangleLinesEx(panel, 2.0f, COLOR_PANEL_LINE);  // 面板边框
 
     // 标题和副标题：登录页和注册页用不同文字
     drawTextCentered(font, (gRegisterMode != 0) ? "注册账号" : "账号登录",
-                     PAGE_CENTER_X, 92.0f, 34, COLOR_TITLE);
+                     PAGE_CENTER_X, 54.0f, 32, COLOR_TITLE);
     drawTextCentered(font, (gRegisterMode != 0) ? "设置用户名和密码，注册后请登录"
                                                 : "请输入已有账号登录",
-                     PAGE_CENTER_X, 140.0f, 18, COLOR_HINT);
+                     PAGE_CENTER_X, 98.0f, 17, COLOR_HINT);
 
     // 用户名输入框
-    drawTextAt(font, "用户名", INPUT_X, 162.0f, 20, COLOR_LABEL);
+    drawTextAt(font, "用户名", INPUT_X, 126.0f, 19, COLOR_LABEL);
     drawInputBox(font, nameBox, gName, "请输入用户名", gFocus == 0);
 
     // 密码输入框：先换成星号再显示，屏幕上不出现原密码
     memset(masked, '*', (size_t)gPasswordLength);
     masked[gPasswordLength] = '\0';
-    drawTextAt(font, "密码", INPUT_X, 252.0f, 20, COLOR_LABEL);
+    drawTextAt(font, "密码", INPUT_X, 214.0f, 19, COLOR_LABEL);
     drawInputBox(font, passwordBox, masked, "请输入密码", gFocus == 1);
 
-    if (gRegisterMode != 0)  // 注册页额外显示密码强度
+    if (gRegisterMode != 0)  // 注册页额外显示密码强度和确认密码框
     {
         drawStrengthHint(font);
+
+        memset(maskedConfirm, '*', (size_t)gConfirmLength);
+        maskedConfirm[gConfirmLength] = '\0';
+        drawTextAt(font, "再次输入密码", INPUT_X, 320.0f, 19, COLOR_LABEL);
+        drawInputBox(font, confirmBox, maskedConfirm, "请再输一次密码", gFocus == 2);
     }
 
-    // 按钮：等待弱密码确认时换成“继续注册 / 返回修改”，其余时候是主按钮和返回
-    if (gConfirmWeak != 0)
-    {
-        drawButton(confirmButton, "继续注册", font);
-        drawButton(cancelButton, "返回修改", font);
-    }
-    else
-    {
-        drawButton(primaryButton,
-                   (gRegisterMode != 0) ? "注册" : "登录", font);
-        drawButton(backButton, "返回", font);
-    }
+    // 主按钮和返回按钮：登录页是“登录”，注册页是“注册”
+    drawButton(primaryButton, (gRegisterMode != 0) ? "注册" : "登录", font);
+    drawButton(backButton, "返回", font);
 
     // 底部提示文字：成功是绿色，错误是红色
     if (gMessage[0] != '\0')
     {
-        drawTextCentered(font, gMessage, PAGE_CENTER_X, MESSAGE_Y, 20,
+        drawTextCentered(font, gMessage, PAGE_CENTER_X, MESSAGE_Y, 19,
                          (gMessageIsError != 0) ? COLOR_ERROR : COLOR_OK);
     }
 
     drawTextCentered(font, "提示：用户名和密码只能使用英文字符、数字和符号",
-                     PAGE_CENTER_X, 492.0f, 16, COLOR_FOOT);
+                     PAGE_CENTER_X, FOOT_Y, 15, COLOR_FOOT);
 }
