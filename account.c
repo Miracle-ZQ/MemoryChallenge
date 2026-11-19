@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>  // islower、isupper、isdigit 字符类别判断
-#include <errno.h>  // errno、ENOENT 用来区分“文件还不存在”
 #include "account.h"  // 本模块的结构体与三个页面函数声明
 #include "ui.h"  // 组内公共按钮：isButtonClicked、drawButton
 
@@ -56,7 +55,6 @@ int   gFocus;  // 当前焦点：0 用户名框，1 密码框，2 确认密码�
 int   gRegisterMode;  // 当前表单：0 登录，1 注册
 char  gMessage[128];  // 页面底部的提示文字
 int   gMessageIsError;  // 提示文字颜色：1 红色错误，0 绿色
-int   gLoadError;  // 1 表示读 users.txt 时发生了错误
 
 //页面用到的颜色
 const Color COLOR_PANEL       = { 248, 249, 251, 255 };  // 面板底色
@@ -149,29 +147,16 @@ int checkPassword(char password[])
 }
 
 /*registerUser函数，把新用户追加写入 users.txt，一行一个“用户名 密码”
-返回值：1 注册成功；0 用户名重复、参数为空或文件读写失败
+说明：账号文件由程序自己创建和维护，这里直接追加写入，不处理文件异常
 */
-int registerUser(User user)
+void registerUser(User user)
 {
     FILE *fp;  // 指向 users.txt 的文件指针
+
     fp = fopen(USERS_FILE, "a");  // 追加打开，文件不存在时自动创建
-    if (fp == NULL)
-    {
-        return 0;  // 文件建立失败
-    }
-
     // 每条记录写成“用户名 密码”一行，中间用一个空格分隔
-    if (fprintf(fp, "%s %s\n", user.name, user.password) < 0)
-    {
-        fclose(fp);
-        return 0;  // 写入失败
-    }
-
-    if (fclose(fp) != 0)  // 关闭失败说明数据可能没完整落盘
-    {
-        return 0;
-    }
-    return 1;  // 注册成功
+    fprintf(fp, "%s %s\n", user.name, user.password);
+    fclose(fp);
 }
 
 /*loginUser函数：验证用户名和密码是否与账号文件中的某一行完全一致
@@ -196,7 +181,7 @@ int loginUser(User user)
     return 0;  // 用户名不存在或密码错误
 }
 
-/*loadUsers函数：把 users.txt 中的账号读入结构体数组，同时更新 gLoadError 标记读取是否出错
+/*loadUsers函数：把 users.txt 中的账号读入结构体数组
 返回值：实际读入的账号个数；文件不存在时返回 0（首次运行视为空表）
 */
 int loadUsers(User users[], int maxCount)//users：接收账号的数组 
@@ -205,15 +190,9 @@ int loadUsers(User users[], int maxCount)//users：接收账号的数组
     FILE *fp;  // 指向 users.txt 的文件指针
     int count = 0;  // 已经读入的账号个数
 
-    gLoadError = 0;  // 每次读取前先清掉上一次的错误标记
-
     fp = fopen(USERS_FILE, "r");
-    if (fp == NULL)  // 打开失败：区分“还没有文件”和“真的出错”
+    if (fp == NULL)  // 还没有账号文件，按空表处理
     {
-        if (errno != ENOENT)  // ENOENT 表示文件不存在，属首次运行
-        {
-            gLoadError = 1;
-        }
         return 0;
     }
 
@@ -223,11 +202,6 @@ int loadUsers(User users[], int maxCount)//users：接收账号的数组
     //"%31s %63s" 对应 name 的 31 字节和 password 的63 字节，防止超长字符串损坏数组
     {
         count++;
-    }
-
-    if (ferror(fp) != 0)  // 读的过程中出错，提示调用者
-    {
-        gLoadError = 1;
     }
 
     fclose(fp);
@@ -388,9 +362,7 @@ int tryLogin(User *user)//user：登录成功后接收账号的结构体地址
         return 1;
     }
 
-    // 文件读取出错和密码错误要分开提示
-    setMessage((gLoadError != 0) ? "账号文件读取失败，请检查 users.txt"
-                                 : "用户名或密码错误", 1);
+    setMessage("用户名或密码错误", 1);  // 登录失败只有这一种情况
     gFocus = 1;
     return 0;
 }
@@ -447,11 +419,6 @@ int registerCurrentForm(void)
 
     // 6/7. 只读一次账号文件，同时完成查重和数量检查
     count = loadUsers(users, USER_MAX);
-    if (gLoadError != 0)
-    {
-        setMessage("账号文件读取失败，请检查 users.txt", 1);
-        return 0;
-    }
     if (findUser(users, count, newUser.name) >= 0)
     {
         setMessage("该用户名已被注册，请换一个", 1);
@@ -470,7 +437,6 @@ int registerCurrentForm(void)
 /*saveCurrentUser函数，把表单里的账号真正写入 users.txt，
 成功后换成登录表单并提示“注册成功，请登录”
 返回值：0 始终留在账号页（注册成功后也不自动登录）
-写入和关闭由 registerUser 负责检查，失败时明确提示
 */
 int saveCurrentUser(void)
 {
@@ -478,14 +444,10 @@ int saveCurrentUser(void)
 
     buildUserFromForm(&newUser);
 
-    if (registerUser(newUser) == 1)
-    {
-        resetAccountPage(0);  // 复用页面重置，切回登录表单
-        setMessage("注册成功，请登录", 0);
-        return 0;
-    }
+    registerUser(newUser);  // 追加写入 users.txt
 
-    setMessage("注册失败：账号文件写入失败", 1);
+    resetAccountPage(0);  // 复用页面重置，切回登录表单
+    setMessage("注册成功，请登录", 0);
     return 0;
 }
 
