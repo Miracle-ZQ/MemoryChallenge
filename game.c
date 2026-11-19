@@ -232,7 +232,7 @@ int updateGame(int *seconds)
         // 锁定期间不处理点击，到期后继续处理本帧输入
         if (phase == GAME_WAIT) return 0;
     }
-    if (phase == GAME_SELECT && (!customMode || count == 0) && isButtonClicked(layout.revealButton)) {  // 点击亮牌按钮，记录次数并亮牌四秒
+    if (phase == GAME_SELECT && isButtonClicked(layout.revealButton)) {  // 点击亮牌按钮，记录次数并亮牌四秒
         cheatCount++;
         revealEnd = now + 4.0;
         phase = GAME_REVEAL;
@@ -261,12 +261,6 @@ int updateGame(int *seconds)
                         return 1;
                     }
                 } else {
-                    if (customMode) {
-                        for (i = 0; i < count; i++) {
-                            state[selectedRows[i]][selectedCols[i]] = 0;
-                        }
-                        count = 0;
-                    }
                     matchErrors++;  // 配对失败，累计错误次数并安排一秒后盖回
                     hideTime = now + 1.0;
                     phase = GAME_WAIT;
