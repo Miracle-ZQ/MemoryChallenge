@@ -39,58 +39,58 @@
 #define FOOT_Y           520.0f  // 页脚说明文字的纵坐标
 
 // 固定区域的常量，更新和绘制都用这几个矩形，保证点到的位置和画出来的位置一致
-static const Rectangle nameBox = {INPUT_X, NAME_BOX_Y, INPUT_W, INPUT_H};
-static const Rectangle passwordBox = {INPUT_X, PASSWORD_BOX_Y, INPUT_W, INPUT_H};
-static const Rectangle confirmBox = {INPUT_X, CONFIRM_BOX_Y, INPUT_W, INPUT_H};
-static const Rectangle primaryButton = {BUTTON_LEFT_X, BUTTON_Y, BUTTON_W, BUTTON_H};
-static const Rectangle backButton = {BUTTON_RIGHT_X, BUTTON_Y, BUTTON_W, BUTTON_H};
+const Rectangle nameBox = {INPUT_X, NAME_BOX_Y, INPUT_W, INPUT_H};
+const Rectangle passwordBox = {INPUT_X, PASSWORD_BOX_Y, INPUT_W, INPUT_H};
+const Rectangle confirmBox = {INPUT_X, CONFIRM_BOX_Y, INPUT_W, INPUT_H};
+const Rectangle primaryButton = {BUTTON_LEFT_X, BUTTON_Y, BUTTON_W, BUTTON_H};
+const Rectangle backButton = {BUTTON_RIGHT_X, BUTTON_Y, BUTTON_W, BUTTON_H};
 
-//状态变量，本模块内部保存的页面状态
-static char  gName[NAME_MAX];  // 用户名输入框里的字符串
-static int   gNameLength;  // 用户名已经输入的字节数
-static char  gPassword[PASSWORD_MAX];  // 密码输入框里的字符串
-static int   gPasswordLength;  // 密码已经输入的字节数
-static char  gConfirm[PASSWORD_MAX];  // 确认密码框里的字符串，只有注册页用
-static int   gConfirmLength;  // 确认密码已经输入的字节数
-static int   gFocus;  // 当前焦点：0 用户名框，1 密码框，2 确认密码框
-static int   gRegisterMode;  // 当前表单：0 登录，1 注册
-static char  gMessage[128];  // 页面底部的提示文字
-static int   gMessageIsError;  // 提示文字颜色：1 红色错误，0 绿色
-static int   gLoadError;  // 1 表示读 users.txt 时发生了错误
+//状态变量，保存账号页面当前的状态（登录页和注册页共用）
+char  gName[NAME_MAX];  // 用户名输入框里的字符串
+int   gNameLength;  // 用户名已经输入的字节数
+char  gPassword[PASSWORD_MAX];  // 密码输入框里的字符串
+int   gPasswordLength;  // 密码已经输入的字节数
+char  gConfirm[PASSWORD_MAX];  // 确认密码框里的字符串，只有注册页用
+int   gConfirmLength;  // 确认密码已经输入的字节数
+int   gFocus;  // 当前焦点：0 用户名框，1 密码框，2 确认密码框
+int   gRegisterMode;  // 当前表单：0 登录，1 注册
+char  gMessage[128];  // 页面底部的提示文字
+int   gMessageIsError;  // 提示文字颜色：1 红色错误，0 绿色
+int   gLoadError;  // 1 表示读 users.txt 时发生了错误
 
 //页面用到的颜色
-static const Color COLOR_PANEL       = { 248, 249, 251, 255 };  // 面板底色
-static const Color COLOR_PANEL_LINE  = { 205, 211, 219, 255 };  // 面板边框
-static const Color COLOR_BOX_FILL    = { 255, 255, 255, 255 };  // 输入框底色
-static const Color COLOR_BOX_LINE    = { 190, 196, 205, 255 };  // 输入框边框
-static const Color COLOR_FOCUS       = {  52, 101, 164, 255 };  // 焦点高亮
-static const Color COLOR_TITLE       = {  32,  58, 104, 255 };  // 标题文字
-static const Color COLOR_LABEL       = {  70,  78,  90, 255 };  // 输入框标题
-static const Color COLOR_TEXT        = {  20,  20,  20, 255 };  // 输入文字
-static const Color COLOR_PLACEHOLDER = { 160, 166, 176, 255 };  // 占位提示
-static const Color COLOR_OK          = {  22, 120,  60, 255 };  // 成功提示
-static const Color COLOR_ERROR       = { 176,  48,  48, 255 };  // 错误提示
-static const Color COLOR_HINT        = { 110, 118, 130, 255 };  // 次要说明
-static const Color COLOR_FOOT        = { 130, 136, 148, 255 };  // 页脚说明
+const Color COLOR_PANEL       = { 248, 249, 251, 255 };  // 面板底色
+const Color COLOR_PANEL_LINE  = { 205, 211, 219, 255 };  // 面板边框
+const Color COLOR_BOX_FILL    = { 255, 255, 255, 255 };  // 输入框底色
+const Color COLOR_BOX_LINE    = { 190, 196, 205, 255 };  // 输入框边框
+const Color COLOR_FOCUS       = {  52, 101, 164, 255 };  // 焦点高亮
+const Color COLOR_TITLE       = {  32,  58, 104, 255 };  // 标题文字
+const Color COLOR_LABEL       = {  70,  78,  90, 255 };  // 输入框标题
+const Color COLOR_TEXT        = {  20,  20,  20, 255 };  // 输入文字
+const Color COLOR_PLACEHOLDER = { 160, 166, 176, 255 };  // 占位提示
+const Color COLOR_OK          = {  22, 120,  60, 255 };  // 成功提示
+const Color COLOR_ERROR       = { 176,  48,  48, 255 };  // 错误提示
+const Color COLOR_HINT        = { 110, 118, 130, 255 };  // 次要说明
+const Color COLOR_FOOT        = { 130, 136, 148, 255 };  // 页脚说明
 
 // 以下是本文件内部使用的函数
-static int loadUsers(User users[], int maxCount);
-static int findUser(const User users[], int count, const char name[]);
-static void setMessage(const char *text, int isError);
-static void clearInputs(void);
-static void buildUserFromForm(User *user);
-static void handleCharInput(void);
-static void handleBackspace(void);
-static int tryLogin(User *user);
-static int registerCurrentForm(void);
-static int saveCurrentUser(void);
-static void drawTextAt(Font font, const char *text, float x, float y, int fontSize,
+int loadUsers(User users[], int maxCount);
+int findUser(const User users[], int count, const char name[]);
+void setMessage(const char *text, int isError);
+void clearInputs(void);
+void buildUserFromForm(User *user);
+void handleCharInput(void);
+void handleBackspace(void);
+int tryLogin(User *user);
+int registerCurrentForm(void);
+int saveCurrentUser(void);
+void drawTextAt(Font font, const char *text, float x, float y, int fontSize,
                        Color color);
-static void drawTextCentered(Font font, const char *text, float centerX, float y,
+void drawTextCentered(Font font, const char *text, float centerX, float y,
                              int fontSize, Color color);
-static void drawInputBox(Font font, Rectangle box, const char *text,
+void drawInputBox(Font font, Rectangle box, const char *text,
                          const char *placeholder, int focused);
-static void drawStrengthHint(Font font);
+void drawStrengthHint(Font font);
 
 /*checkPassword函数,检测密码安全等级。
 返回值：0 不安全（不足 6 位，或只有一类字符）；1 中等（两类字符）；
@@ -98,7 +98,7 @@ static void drawStrengthHint(Font font);
 被registerCurrentForm函数引用：注册时用来判断要不要弹弱密码确认
 被drawStrengthHint函数引用：显示代码安全等级时用来判断
 */
-static int checkPassword(char password[])
+int checkPassword(char password[])
 {
     int length;  // 密码的字符个数（不含结束符）
     int hasLower = 0;  // 是否含小写字母：1 有，0 无
@@ -151,7 +151,7 @@ static int checkPassword(char password[])
 /*registerUser函数，把新用户追加写入 users.txt，一行一个“用户名 密码”
 返回值：1 注册成功；0 用户名重复、参数为空或文件读写失败
 */
-static int registerUser(User user)
+int registerUser(User user)
 {
     FILE *fp;  // 指向 users.txt 的文件指针
     fp = fopen(USERS_FILE, "a");  // 追加打开，文件不存在时自动创建
@@ -177,7 +177,7 @@ static int registerUser(User user)
 /*loginUser函数：验证用户名和密码是否与账号文件中的某一行完全一致
 返回值：1 两项都匹配，登录成功；0 用户名不存在或密码错误
 */
-static int loginUser(User user)
+int loginUser(User user)
 {
     User users[USER_MAX];  // 从文件读入的账号数组
     int count;  // 实际读入的账号个数
@@ -199,7 +199,7 @@ static int loginUser(User user)
 /*loadUsers函数：把 users.txt 中的账号读入结构体数组，同时更新 gLoadError 标记读取是否出错
 返回值：实际读入的账号个数；文件不存在时返回 0（首次运行视为空表）
 */
-static int loadUsers(User users[], int maxCount)//users：接收账号的数组 
+int loadUsers(User users[], int maxCount)//users：接收账号的数组 
                                                 //maxCount：数组最多能装下的账号个数
 {
     FILE *fp;  // 指向 users.txt 的文件指针
@@ -237,7 +237,7 @@ static int loadUsers(User users[], int maxCount)//users：接收账号的数组
 /* findUser函数，在已经读入的账号数组里按用户名查找
 返回值：找到时返回该账号在数组中的下标（从 0 开始），找不到返回 -1
 */
-static int findUser(const User users[], int count, const char name[])//users、count：账号数组和它的有效长度
+int findUser(const User users[], int count, const char name[])//users、count：账号数组和它的有效长度
                                                                      //name：要找的用户名
 {
     int i;  // 遍历数组用的下标
@@ -254,7 +254,7 @@ static int findUser(const User users[], int count, const char name[])//users、c
 
 /*setMessage函数，设置页面底部的提示文字和颜色，输出时更新 gMessage 和 gMessageIsError
 */
-static void setMessage(const char *text, int isError)//text：提示内容；isError：1 表示红色错误，0 表示绿色正常
+void setMessage(const char *text, int isError)//text：提示内容；isError：1 表示红色错误，0 表示绿色正常
 {
     strncpy(gMessage, text, sizeof(gMessage) - 1);  // 留出结束符的位置
     gMessage[sizeof(gMessage) - 1] = '\0';
@@ -264,7 +264,7 @@ static void setMessage(const char *text, int isError)//text：提示内容；isE
 /*clearInputs函数，把三个输入框清空(清空 gName、gPassword、gConfirm 和它们的长度)，
 焦点回到用户名框
 */
-static void clearInputs(void)
+void clearInputs(void)
 {
     gName[0] = '\0';  // 用户名框清空
     gNameLength = 0;
@@ -278,7 +278,7 @@ static void clearInputs(void)
 /*buildUserFromForm函数，把两个输入框的内容复制成一个 User 结构体
 输出时把用户名和密码写进 *user
 */
-static void buildUserFromForm(User *user)
+void buildUserFromForm(User *user)
 {
     strcpy(user->name, gName); 
     strcpy(user->password, gPassword);
@@ -288,7 +288,7 @@ static void buildUserFromForm(User *user)
 输出时更新 gName/gPassword/gConfirm 及其长度
 只接受可打印 ASCII 字符（33～126），空格、控制字符、中文
 */
-static void handleCharInput(void)
+void handleCharInput(void)
 {
     int code;  // 本帧读到的一个字符编码，0 表示队列已空
     char *text;  // 当前有焦点的输入框
@@ -330,7 +330,7 @@ static void handleCharInput(void)
 /*handleBackspace函数，按下退格键时删掉当前焦点框末尾的一个字符
 输出时更新对应输入框的内容和长度
 */
-static void handleBackspace(void)
+void handleBackspace(void)
 {
     char *text;  // 当前有焦点的输入框
     int *length;  // 当前输入框已经输入的字节数
@@ -362,7 +362,7 @@ static void handleBackspace(void)
 /*tryLogin函数，用输入框里的用户名和密码做一次登录校验
 返回值：1 登录成功；0 留在账号页（空输入、密码错误或文件出错）
 */
-static int tryLogin(User *user)//user：登录成功后接收账号的结构体地址
+int tryLogin(User *user)//user：登录成功后接收账号的结构体地址
 {
     User input;  // 本次尝试登录的账号
 
@@ -401,7 +401,7 @@ static int tryLogin(User *user)//user：登录成功后接收账号的结构体�
 输出时可能在页面上显示提示，并把焦点移到需要修改的输入框
 返回值：0 始终留在注册页（注册成功由 saveCurrentUser 切换成登录表单）
 */
-static int registerCurrentForm(void)
+int registerCurrentForm(void)
 {
     User users[USER_MAX];  // 用来数一下已经有多少个账号
     User newUser;  // 本次准备注册的新用户
@@ -472,7 +472,7 @@ static int registerCurrentForm(void)
 返回值：0 始终留在账号页（注册成功后也不自动登录）
 写入和关闭由 registerUser 负责检查，失败时明确提示
 */
-static int saveCurrentUser(void)
+int saveCurrentUser(void)
 {
     User newUser;  // 本次要写入文件的账号
 
@@ -556,7 +556,7 @@ int updateAccountPage(User *user)//user:接收登录账号的结构体地址
 /*drawTextAt函数,从指定位置开始画一行文字，统一字体大小和字间距
 输入：font:中文字体；text:文字；x、y:左上角坐标；fontSize:字号；color:颜色
 */
-static void drawTextAt(Font font, const char *text, float x, float y, int fontSize,
+void drawTextAt(Font font, const char *text, float x, float y, int fontSize,
                        Color color)
 {
     DrawTextEx(font, text, (Vector2){x, y}, (float)fontSize, 1.0f, color);
@@ -565,7 +565,7 @@ static void drawTextAt(Font font, const char *text, float x, float y, int fontSi
 /*drawTextCentered函数,把一行文字按水平中心居中绘制
 输入：font：中文字体；text：文字；centerX：中心横坐标；y：上边缘纵坐标；fontSize：字号；color：颜色
 */
-static void drawTextCentered(Font font, const char *text, float centerX, float y,
+void drawTextCentered(Font font, const char *text, float centerX, float y,
                              int fontSize, Color color)
 {
     Vector2 size = MeasureTextEx(font, text, (float)fontSize, 1.0f);  // 文字实际宽度
@@ -578,7 +578,7 @@ static void drawTextCentered(Font font, const char *text, float centerX, float y
 输入：font：中文字体；box：输入框矩形；text：要显示的内容（密码已经换成星号）；
 placeholder：空框时的灰色提示；focused：1 表示这个框正在编辑
 */
-static void drawInputBox(Font font, Rectangle box, const char *text,
+void drawInputBox(Font font, Rectangle box, const char *text,
                          const char *placeholder, int focused)
 {
     Vector2 textSize;  // 已输入文字的宽度，用来放光标
@@ -629,7 +629,7 @@ static void drawInputBox(Font font, Rectangle box, const char *text,
 
 /*drawStrengthHint函数，在注册页显示当前密码的安全等级，边输入边变化
 */
-static void drawStrengthHint(Font font)//font：中文字体
+void drawStrengthHint(Font font)//font：中文字体
 {
     int strength;  // 密码安全等级 0/1/2
     const char *text;  // 要显示的提示文字
