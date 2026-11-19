@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <math.h>
+#include <limits.h>
 #include "game.h"
 #include "ui.h"
 
@@ -10,15 +12,84 @@ static int rows, cols, count, groupSize;  // 本局行数、列数、当前已�
 static int currentLevel, elapsedSeconds;  // 本局难度和盖牌后已用的整秒数
 static int matchErrors;  // 本局配对错误次数，选满一组但不相同时加一次
 static double previewEnd, startTime, hideTime;  // 开局亮牌截止时刻、正式计时起点、错牌盖回时刻，单位为秒
-static int previewSeconds;  // 当前难度开局亮牌的总秒数
+static double previewSeconds;  // 当前难度开局亮牌的总秒数
 static int cheatCount;  // 本局手动亮牌的使用次数，开局自动亮牌不计入
 static double revealEnd;  // 手动亮牌结束的时刻，单位为秒
+
+static int customMode;  // 当前局的模式：1 自定义挑战，0 普通难度
+static int successfulMatches;  // 本局已成功配对的组数，每完成一组加一
+static int resultValid;  // 自定义通关结果是否有效，新局和中途退出时清零
+static CustomGameConfig customConfig;  // 本局实际使用的自定义配置，供生成棋盘和结算使用
+static CustomGameResult customResult;  // 通关时保存的成绩快照，供主程序重复读取
+static double preciseElapsedSeconds;  // 正式游戏的精确用时，单位为秒，包含亮牌和错配等待
+
+/*
+ * 功能：把浮点数限制在指定范围内
+ * 输入：v 为待处理数值，lo 和 hi 分别为下限和上限
+ * 输出：无，不修改传入参数
+ * 返回值：范围内返回 v，越界时返回对应边界值
+ */
+static double clampDouble(double v, double lo, double hi)
+{
+    return v < lo ? lo : v > hi ? hi : v;
+}
+
+/*
+ * 功能：检查自定义棋盘和开局展示时间是否合法
+ * 输入：cfg 为待检查的配置地址
+ * 输出：无，不修改传入配置
+ * 返回值：1 合法，0 配置为空、行列越界、牌数为奇数或展示时间不在 1～30 秒
+ */
+int validateCustomConfig(const CustomGameConfig *cfg)
+{
+    return cfg && cfg->rows >= 2 && cfg->rows <= 6 &&
+        cfg->cols >= 2 && cfg->cols <= 6 && !(cfg->rows * cfg->cols % 2) &&
+        cfg->previewSeconds >= 1 && cfg->previewSeconds <= 30;
+}
+
+/*
+ * 功能：根据完整通关统计计算自定义最终积分
+ * 输入：cfg 为配置；correct、wrong、reveals 为正确组数、错误次数和主动亮牌次数；
+ *       elapsed 为正式用时（秒），out 为接收结果的地址
+ * 输出：成功时写入 *out，中间使用浮点数，仅在最终积分处四舍五入
+ * 返回值：1 计算成功，0 参数非法或正确组数不符合通关条件
+ */
+static int calculateCustomResult(const CustomGameConfig *cfg, int correct,
+    int wrong, int reveals, double elapsed, CustomGameResult *out)
+{
+    CustomGameResult r = {0};  // 本次计算的各项统计、倍率及最终积分
+    double adjusted;  // 正确奖励和错配扣分分别应用难度倍率后的分数
+    double raw;  // 再应用亮牌、时间惩罚并裁剪为非负数后的未取整积分
+    if (!out || !validateCustomConfig(cfg) || correct != cfg->rows * cfg->cols / 2 ||
+        wrong < 0 || wrong > (INT_MAX - 1800) / 40 || reveals < 0 ||
+        !isfinite(elapsed) || elapsed < 0) return 0;
+    r.groups = correct; r.correct = correct; r.wrong = wrong; r.reveals = reveals;
+    r.baseScore = 100 * correct - 40 * wrong; r.elapsedSeconds = elapsed;
+    r.boardMultiplier = clampDouble(1 + .04 * (r.groups - 8), .5, 1.5);
+    r.previewMultiplier = clampDouble(1 + .05 * (5 - cfg->previewSeconds), .5, 1.5);
+    r.plusMultiplier = r.boardMultiplier * r.previewMultiplier;
+    r.minusMultiplier = clampDouble(2 - r.previewMultiplier, .5, 2);
+    r.revealFactor = pow(.97, reveals);
+    r.timePenalty = .30 * clampDouble(elapsed / (5 * r.groups), 0, 1);
+    adjusted = 100 * correct * r.plusMultiplier - 40.0 * wrong * r.minusMultiplier;
+    raw = fmax(0, adjusted * r.revealFactor * (1 - r.timePenalty));
+    r.finalScore = (int)floor(raw + .5); *out = r;
+    return 1;
+}
+
+/*
+ * 功能：查询当前局是否采用自定义规则
+ * 输入：无
+ * 输出：无，不修改游戏状态
+ * 返回值：1 自定义挑战，0 普通模式
+ */
+int isCustomGame(void) { return customMode; }
 
 typedef enum {
     GAME_PREVIEW,   // 开局自动亮牌，供玩家记忆
     GAME_SELECT,    // 玩家点击选牌，进行配对
     GAME_REVEAL,    // 玩家使用手动亮牌，期间不能选牌
-    GAME_WAIT,      // 配对失败，等待错牌盖回
+    GAME_WAIT,      // 普通局等待盖回；自定义局已盖回，仅锁定操作
     GAME_FINISHED   // 全部配对成功，本局通关
 } GamePhase;
 static GamePhase phase = GAME_PREVIEW;  // 游戏当前阶段，开局从自动亮牌开始
@@ -56,10 +127,10 @@ void loadGameResources(void)
 {
     int i;  // 遍历图片库中的正面图片
     back = LoadTexture("assets/cards/back.png");//加载背面卡片
-    SetTextureFilter(back, TEXTURE_FILTER_BILINEAR);//设置双线性过滤，让图片放大、缩小时的边缘更平滑
+    if (back.id) SetTextureFilter(back, TEXTURE_FILTER_BILINEAR);//设置双线性过滤，让图片放大、缩小时的边缘更平滑
     for (i = 0; i < CARD_POOL_SIZE; i++) {
         faces[i] = LoadTexture(TextFormat("assets/cards/%02d.png", i));
-        SetTextureFilter(faces[i], TEXTURE_FILTER_BILINEAR);
+        if (faces[i].id) SetTextureFilter(faces[i], TEXTURE_FILTER_BILINEAR);
     }
 }
 
@@ -71,6 +142,9 @@ void loadGameResources(void)
  */
 void startGame(int level)
 {
+    customMode = 0;
+    successfulMatches = resultValid = 0;
+    preciseElapsedSeconds = 0;
     currentLevel = level;
     initBoard(level);
     shuffleBoard();
@@ -87,6 +161,55 @@ void startGame(int level)
 }
 
 /*
+ * 功能：按自定义配置开始两两配对的新局
+ * 输入：cfg 为棋盘行列数和开局展示秒数，卡牌纹理应已加载
+ * 输出：生成并打乱棋盘，清零计数和时间，进入开局亮牌阶段
+ * 返回值：1 启动成功，0 配置非法或卡牌资源缺失；失败时不改变旧局
+ */
+int startCustomGame(const CustomGameConfig *cfg)
+{
+    int i;  // 遍历所有正面纹理，检查图片资源是否完整
+    if (!validateCustomConfig(cfg) || !back.id) return 0;
+    for (i = 0; i < CARD_POOL_SIZE; i++) if (!faces[i].id) return 0;
+    customConfig = *cfg;
+    startGame(1);
+    customMode = 1;
+    initBoard(0);
+    shuffleBoard();
+    previewSeconds = cfg->previewSeconds;
+    previewEnd = GetTime() + previewSeconds;
+    return 1;
+}
+
+/*
+ * 功能：读取自定义模式通关时保存的结算结果
+ * 输入：out 为接收成绩的结构体地址
+ * 输出：成功时写入 *out，不重新计算或修改成绩
+ * 返回值：1 读取成功，0 地址为空、不是自定义局或尚无有效通关结果
+ */
+int getCustomGameResult(CustomGameResult *out)
+{
+    if (!out || !customMode || !resultValid) return 0;
+    *out = customResult;
+    return 1;
+}
+
+/*
+ * 功能：释放卡牌正面和背面纹理，在关闭窗口前调用一次
+ * 输入：无，使用本模块已加载的纹理
+ * 输出：释放成功加载的纹理，跳过未加载的资源
+ * 返回值：无
+ */
+void unloadGameResources(void)
+{
+    int i;  // 遍历正面图片数组，释放已经加载的纹理
+    if (back.id) UnloadTexture(back);
+    for (i = 0; i < CARD_POOL_SIZE; i++) {
+        if (faces[i].id) UnloadTexture(faces[i]);
+    }
+}
+
+/*
  * 功能：处理本帧的选牌、盖牌和通关，不等待输入或暂停窗口
  * 输入：seconds 是接收用时的地址，鼠标由 raylib 读取
  * 输出：更新棋盘；只有通关时才写入 *seconds，整秒用时从开局盖牌后计算
@@ -98,12 +221,13 @@ int updateGame(int *seconds)
     double now = GetTime();  // 本帧当前时刻，单位为秒，用于判断各阶段是否到时
     GameLayout layout;  // 本帧使用的棋盘布局和按钮区域
 
-    if (phase == GAME_FINISHED) {//游戏通关，传秒数出去
+    if (phase == GAME_FINISHED) {  // 保留通关用时，但不重复通知主程序通关
         *seconds = elapsedSeconds;
-        return 1;
+        return 0;
     }
     layout = getGameLayout();  // 获取本帧卡牌布局和按钮区域
     if (isButtonClicked(layout.backButton)) {  // 点击返回，通知主函数退出本局// 亮牌和等待盖回期间，仍然可以退出
+        resultValid = 0;
         return 2;
     }
     if (phase == GAME_PREVIEW) {  // 开局亮牌阶段，暂不接受选牌
@@ -114,20 +238,21 @@ int updateGame(int *seconds)
         return 0;  // 刚盖牌这一帧不同时接收选牌
     }
 
-    elapsedSeconds = (int)(now - startTime);  // 更新整秒用时，包含手动亮牌和错牌等待
+    preciseElapsedSeconds = now - startTime;
+    elapsedSeconds = (int)preciseElapsedSeconds;  // 更新整秒用时，包含手动亮牌和错牌等待
     if (phase == GAME_REVEAL) {  // 手动亮牌阶段，暂不接受选牌
         if (now >= revealEnd) {  // 手动亮牌结束，恢复选牌
             phase = GAME_SELECT;
         }
         return 0;  // 亮牌期间不允许选牌或重复触发
     }
-    if (phase == GAME_SELECT && isButtonClicked(layout.revealButton)) {  // 点击亮牌按钮，记录次数并亮牌四秒
+    if (phase == GAME_SELECT && (!customMode || count == 0) && isButtonClicked(layout.revealButton)) {  // 点击亮牌按钮，记录次数并亮牌四秒
         cheatCount++;
         revealEnd = now + 4.0;
         phase = GAME_REVEAL;
         return 0;
     }
-    if (phase == GAME_WAIT) {  // 错牌展示阶段，等待盖回
+    if (phase == GAME_WAIT) {  // 普通局等待错牌盖回，自定义局等待操作解锁
         if (now >= hideTime) {  // 等待结束，盖回错牌并恢复选牌
             for (i = 0; i < count; i++) {
                 state[selectedRows[i]][selectedCols[i]] = 0;
@@ -151,14 +276,20 @@ int updateGame(int *seconds)
                     for (i = 0; i < count; i++) {
                         state[selectedRows[i]][selectedCols[i]] = 2;
                     }
+                    successfulMatches++;
                     count = 0;
                     if (isFinished()) {  // 全部配对完成，写回用时并通知主函数通关
                         phase = GAME_FINISHED;
+                        if (customMode) resultValid = calculateCustomResult(&customConfig, successfulMatches, matchErrors, cheatCount, preciseElapsedSeconds, &customResult);
                         *seconds = elapsedSeconds;
                         return 1;
                     }
                 } else {
                     matchErrors++;  // 配对失败，累计错误次数并安排一秒后盖回
+                    if (customMode) {
+                        for (i = 0; i < count; i++) state[selectedRows[i]][selectedCols[i]] = 0;
+                        count = 0;
+                    }
                     hideTime = now + 1.0;
                     phase = GAME_WAIT;
                 }
@@ -204,10 +335,10 @@ void drawGame(Font font)
     Color fill;  // 当前卡牌的背景颜色，已配对时使用不同颜色
     const char *label;  // 本次要绘制的状态文字
     GameLayout layout = getGameLayout();  // 按当前窗口尺寸计算得到的本帧布局
-    DrawTextEx(font, (currentLevel == 1 ? "初级" : currentLevel == 2 ? "中级" : "高级"),
+    DrawTextEx(font, (customMode ? "自定义挑战" : currentLevel == 1 ? "初级" : currentLevel == 2 ? "中级" : "高级"),
                (Vector2){-getUiCamera().offset.x / getUiCamera().zoom + 10, 8}, 18, 1, DARKGRAY);
-    DrawTextEx(font, TextFormat("作弊：%d 次", cheatCount),
-               (Vector2){-getUiCamera().offset.x / getUiCamera().zoom + 90, 10}, 16, 1, DARKGRAY);
+    DrawTextEx(font, TextFormat(customMode ? "亮牌：%d 次" : "作弊：%d 次", cheatCount),
+               (Vector2){-getUiCamera().offset.x / getUiCamera().zoom + 130, 10}, 16, 1, DARKGRAY);
     if (phase == GAME_PREVIEW || phase == GAME_REVEAL) {
         label = phase == GAME_PREVIEW ? "记忆倒计时" : "亮牌倒计时";
     } else {
@@ -228,6 +359,9 @@ void drawGame(Font font)
         DrawRectangleRec(track, (Color){218, 226, 236, 255});
         DrawRectangleRec(progress, barColor);
     }
+    if (customMode) DrawTextEx(font, TextFormat("已配对 %d/%d  基础积分 %d  亮牌剩余 %.1f%%", successfulMatches, rows*cols/2,
+        successfulMatches*100-matchErrors*40, 100*pow(.97, cheatCount)),
+        (Vector2){-getUiCamera().offset.x/getUiCamera().zoom+10, 58}, 16, 1, WHITE);
     for (r = 0; r < rows; r++) {
         for (c = 0; c < cols; c++) {
             bounds = cardBounds(layout, r, c);
@@ -250,18 +384,19 @@ void drawGame(Font font)
 
 /*
  * 功能：按难度随机抽取图案，按组生成牌面并清空状态
- * 输入：level 为已经检查有效的难度
+ * 输入：普通局 level 为 1～3；自定义局使用 customConfig，忽略 level
  * 输出：更新内部数组、行列数及每组张数
  * 返回值：无
  */
 static void initBoard(int level)
 {
     int pool[CARD_POOL_SIZE];  // 候选图案编号，抽取时不重复
-    int i, j, temp, kinds;
+    int i, j, temp, kinds;  // 抽图的当前位置、随机位置、交换临时值和本局图案种数
     int r, c, number = 0;  // 初始化用的行、列下标，以及已填入的牌数
     rows = level == 3 ? 6 : 4;
     cols = level == 1 ? 4 : level == 2 ? 5 : 6;
     groupSize = level == 3 ? 3 : 2;
+    if (customMode) { rows = customConfig.rows; cols = customConfig.cols; groupSize = 2; }
     kinds = rows * cols / groupSize;  // 初、中、高级分别抽取 8、10、12 种
     for (i = 0; i < CARD_POOL_SIZE; i++) pool[i] = i;
     // 每次从剩余候选中抽一个编号，交换到前面，保证本局图案互不重复
@@ -368,7 +503,7 @@ static GameLayout getGameLayout(void)
     float width = GetScreenWidth() / camera.zoom;  // 窗口宽度换算成界面布局坐标后的长度
     float height = GetScreenHeight() / camera.zoom;  // 窗口高度换算成界面布局坐标后的长度
     float margin = 10;  // 棋盘与窗口边缘保留的距离，使用界面布局单位
-    float boardTop = 62;  // 棋盘顶部位置，上方留给状态文字和按钮
+    float boardTop = customMode ? 86.0f : 62.0f;  // 棋盘顶部位置，上方留给状态文字和按钮
     float availableHeight = height - boardTop - margin;  // 扣除状态栏和底部留边后的可用高度
 
     layout.gap = availableHeight / 90;
@@ -415,6 +550,7 @@ static Rectangle cardBounds(GameLayout layout, int row, int col)
  */
 static void drawCardPicture(Texture2D picture, Rectangle bounds)
 {
+    if (!picture.id || picture.width <= 0 || picture.height <= 0) return;
     float padding = (bounds.width < bounds.height ? bounds.width : bounds.height) * 0.08f;  // 图片与卡牌边框的留白，按短边的比例计算
     float sx = (bounds.width - padding * 2) / picture.width;  // 图片按可用宽度放入卡牌时的缩放比例
     float sy = (bounds.height - padding * 2) / picture.height;  // 图片按可用高度放入卡牌时的缩放比例

@@ -20,6 +20,7 @@ typedef enum {
     PAGE_ACCOUNT,
     PAGE_MENU,
     PAGE_LEVEL,
+    PAGE_CUSTOM_CONFIG,
     PAGE_GAME,
     PAGE_RESULT,
     PAGE_RANK
@@ -33,9 +34,15 @@ static const Rectangle gameButton = {180, 260, 440, 48};  // 开始游戏
 static const Rectangle rankButton = {180, 340, 440, 48};  // 排行榜
 static const Rectangle exitButton = {300, 460, 200, 48};  // 退出程序
 static const Rectangle backButton = {300, 460, 200, 48};  // 返回菜单
-static const Rectangle easyButton = {250, 180, 300, 48};  // 初级
-static const Rectangle mediumButton = {250, 260, 300, 48};  // 中级
-static const Rectangle hardButton = {250, 340, 300, 48};  // 高级
+static const Rectangle easyButton = {250, 150, 300, 48};  // 初级
+static const Rectangle mediumButton = {250, 220, 300, 48};  // 中级
+static const Rectangle hardButton = {250, 290, 300, 48};  // 高级
+
+static const Rectangle customButton = {250, 360, 300, 48};  // 难度选择页的自定义挑战入口
+static const Rectangle customStart = {180, 460, 210, 48};  // 自定义配置页的开始挑战按钮
+static const Rectangle customBack = {410, 460, 210, 48};  // 自定义配置页返回难度选择的按钮
+static void drawCustomConfig(Font font, const CustomGameConfig *cfg, int failed);
+static void drawCustomResult(Font font, const CustomGameResult *r);
 
 // 在窗口中居中绘制一行文字
 static void drawText(Font font, const char text[], float y, float size, Color color);
@@ -64,6 +71,10 @@ int main(void)
     int gameResult;  // 游戏更新结果：0 继续，1 通关，2 退出本局
     int saveResult = 0;  // 排行榜保存结果：1 成功，0 未更新，-1 出错
 
+    CustomGameConfig config = {4, 4, 5};  // 设置页可调整的配置，默认 4×4、开局展示 5 秒
+    CustomGameResult customResult = {0};  // 从游戏模块读取的通关快照，供结算页使用
+    int customFailed = 0;  // 自定义局是否因资源缺失而启动失败，用于显示提示
+
     srand((unsigned int)time(NULL));
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);  // 允许调整窗口大小
     InitWindow(800, 600, "记忆力大考验");  // 创建初始大小为 800×600 的窗口
@@ -71,7 +82,7 @@ int main(void)
     SetTargetFPS(60);  // 设置目标帧率为每秒 60 帧
     SetExitKey(KEY_NULL);  // 禁用默认按 Esc 退出程序的行为
 
-    loadUiResources(&font);//加载字体
+    if (!loadUiResources(&font)) { CloseWindow(); return 1; } ////加载字体
     loadGameResources();//加载卡牌
     loadBackgrounds();//加载页面背景图
 
@@ -128,6 +139,11 @@ int main(void)
                 else if (isButtonClicked(hardButton)) {//高级
                     level = 3;
                 }
+                else if (isButtonClicked(customButton)) {
+                    customFailed = 0;
+                    page = PAGE_CUSTOM_CONFIG;
+                    break;
+                }
                 else if (isButtonClicked(backButton)) {//返回
                     page = PAGE_MENU;
                     break;
@@ -140,11 +156,30 @@ int main(void)
                 page = PAGE_GAME;
                 break;
 
+            case PAGE_CUSTOM_CONFIG: {
+                int i;  // 参数行编号：0 行数、1 列数、2 开局展示时间
+                for (i = 0; i < 3; i++) {
+                    // 本帧调整量：点击加号为 1，减号为 -1，未点击为 0
+                    int delta = isButtonClicked((Rectangle){520, 160.0f+i*65.0f, 48, 40}) -
+                                isButtonClicked((Rectangle){300, 160.0f+i*65.0f, 48, 40});
+                    if (i == 0 && config.rows+delta >= 2 && config.rows+delta <= 6) config.rows += delta;
+                    if (i == 1 && config.cols+delta >= 2 && config.cols+delta <= 6) config.cols += delta;
+                    if (i == 2 && config.previewSeconds+delta >= 1 && config.previewSeconds+delta <= 30) config.previewSeconds += delta;
+                }
+                if (isButtonClicked(customBack)) page = PAGE_LEVEL;
+                else if (isButtonClicked(customStart) && validateCustomConfig(&config)) {
+                    if (startCustomGame(&config)) page = PAGE_GAME;
+                    else customFailed = 1;
+                }
+                break;
+            }
             case PAGE_GAME:
                 gameResult = updateGame(&seconds);
                 if (gameResult == 1) {//游戏通关
                     saveResult = 0;
-                    if (!getGameCheats()) {// 作弊局只显示结算，不向排行榜提交成绩
+                    if (isCustomGame()) {
+                        if (!getCustomGameResult(&customResult)) { page = PAGE_MENU; break; }
+                    } else if (!getGameCheats()) {// 作弊局只显示结算，不向排行榜提交成绩
                         saveResult = saveScore(user.name, level, seconds);
                     }
                     page = PAGE_RESULT;
@@ -156,7 +191,7 @@ int main(void)
             case PAGE_RESULT:
                 if (isButtonClicked(backButton)) {//返回菜单
                     page = PAGE_MENU;
-                } else if (isButtonClicked(rankButton)) {//查看排行榜
+                } else if (!isCustomGame() && isButtonClicked(rankButton)) {//查看排行榜
                     setCurrentPlayer(user.name);
                     resetRankPage();
                     page = PAGE_RANK;
@@ -194,10 +229,14 @@ int main(void)
             case PAGE_LEVEL:
                 drawLevels(font);
                 break;
+            case PAGE_CUSTOM_CONFIG:
+                drawCustomConfig(font, &config, customFailed);
+                break;
             case PAGE_GAME:
                 drawGame(font);
                 break;
             case PAGE_RESULT:
+                if (isCustomGame()) { drawCustomResult(font, &customResult); break; }
                 drawText(font, "恭喜通关", 90, 36, COLOR_TITLE);
                 drawText(font, TextFormat("用时：%d 秒", seconds), 180, 28, COLOR_TITLE);
                 drawText(font, TextFormat("配对错误：%d 次   作弊：%d 次", getGameMistakes(), getGameCheats()), 215, 20, COLOR_HINT);
@@ -223,6 +262,7 @@ int main(void)
         EndDrawing();
     }
 
+    unloadGameResources();
     unloadBackgrounds();
     unloadUiResources(font);
     CloseWindow();
@@ -274,5 +314,54 @@ static void drawLevels(Font font)
     drawButton(easyButton, "初级 4x4", font);
     drawButton(mediumButton, "中级 4x5", font);
     drawButton(hardButton, "高级 6x6", font);
+    drawButton(customButton, "自定义挑战", font);
+    drawButton(backButton, "返回", font);
+}
+
+/*
+ * 功能：绘制自定义挑战的参数控件、规则和配置校验提示
+ * 输入：font 为共用中文字体，cfg 为当前配置，failed 表示是否启动失败
+ * 输出：设置页画面，不修改配置或开始游戏
+ * 返回值：无
+ */
+static void drawCustomConfig(Font font, const CustomGameConfig *cfg, int failed)
+{
+    int i, groups = cfg->rows * cfg->cols / 2;  // 控件行下标和当前棋盘的总配对组数
+    const char *labels[] = {"棋盘行数", "棋盘列数", "开局展示秒数"};  // 三行参数控件的标题
+    double b = 1+.04*(groups-8), p = 1+.05*(5-cfg->previewSeconds);  // 预览用的棋盘倍率 B 和开局倍率 P
+    if (p < .5) p = .5;
+    drawText(font, "自定义积分挑战", 70, 34, COLOR_TITLE);
+    for (i = 0; i < 3; i++) {
+        DrawTextEx(font, labels[i], (Vector2){130, 168.0f+i*65.0f}, 22, 1, COLOR_TITLE);
+        drawButton((Rectangle){300, 160.0f+i*65.0f, 48, 40}, "-", font);
+        drawButton((Rectangle){520, 160.0f+i*65.0f, 48, 40}, "+", font);
+        drawText(font, TextFormat("%d", i == 0 ? cfg->rows : i == 1 ? cfg->cols : (int)cfg->previewSeconds), 168.0f+i*65.0f, 24, COLOR_TITLE);
+    }
+    drawText(font, "错配立即盖回，锁定 1 秒；仅两两配对", 360, 20, COLOR_HINT);
+    drawText(font, TextFormat("牌数 %d  配对 %d 组  基准 %d 秒", cfg->rows*cfg->cols, groups, 5*groups), 395, 20, COLOR_TITLE);
+    drawText(font, TextFormat("棋盘倍率 %.2f  开局倍率 %.2f", b, p), 425, 20, COLOR_HINT);
+    if (validateCustomConfig(cfg)) drawButton(customStart, "开始挑战", font);
+    else drawText(font, "牌数必须为偶数", 475, 20, COLOR_ERROR);
+    drawButton(customBack, "返回", font);
+    drawText(font, failed ? "卡牌资源加载失败，请检查图片" : "主动亮牌每次剩余积分乘 0.97，耗时最多扣 30%", 540, 18, failed ? COLOR_ERROR : COLOR_HINT);
+}
+
+/*
+ * 功能：绘制自定义挑战的基础分、倍率、惩罚和最终积分
+ * 输入：font 为共用中文字体，r 为已通关的成绩快照
+ * 输出：结算页面，不修改成绩或写入文件
+ * 返回值：无
+ */
+static void drawCustomResult(Font font, const CustomGameResult *r)
+{
+    drawText(font, "挑战完成", 55, 34, COLOR_TITLE);
+    drawText(font, TextFormat("正确 %d 组 +%d   错误 %d 次 -%d", r->correct, r->correct*100, r->wrong, r->wrong*40), 120, 22, COLOR_TITLE);
+    drawText(font, TextFormat("基础积分 %d", r->baseScore), 160, 24, COLOR_TITLE);
+    drawText(font, TextFormat("棋盘倍率 %.2f   开局倍率 %.2f", r->boardMultiplier, r->previewMultiplier), 205, 22, COLOR_HINT);
+    drawText(font, TextFormat("加分倍率 %.2f   扣分倍率 %.2f", r->plusMultiplier, r->minusMultiplier), 240, 22, COLOR_HINT);
+    drawText(font, TextFormat("难度修正后 %.2f 分", 100*r->correct*r->plusMultiplier-40*r->wrong*r->minusMultiplier), 275, 22, COLOR_TITLE);
+    drawText(font, TextFormat("主动亮牌 %d 次   剩余 %.2f%%", r->reveals, 100*r->revealFactor), 310, 22, COLOR_HINT);
+    drawText(font, TextFormat("用时 %.2f 秒 / 基准 %d 秒   扣 %.2f%%", r->elapsedSeconds, 5*r->groups, 100*r->timePenalty), 345, 22, COLOR_HINT);
+    drawText(font, TextFormat("最终积分 %d 分", r->finalScore), 395, 32, COLOR_OK);
     drawButton(backButton, "返回", font);
 }
