@@ -10,9 +10,6 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <limits.h>
 
 #include "rank.h"
 #include "ui.h"
@@ -268,8 +265,7 @@ void setCurrentPlayer(const char name[])
  */
 void resetRankPage(void)
 {
-    CustomRankConfig initial = {CUSTOM_RANK_FORMULA_VERSION, 4, 4, 5000};
-    resetCustomRankPage(&initial);
+    resetCustomRankPage();
     g_pageLevel = 1;
 
     if (!g_loaded) loadRanks();
@@ -392,271 +388,115 @@ void drawRankPage(Font font)
 }
 
 
-#define CUSTOM_RANK_FILE "custom_ranks.txt"  // 自定义成绩独立存档
-#define CUSTOM_RANK_TEMP "custom_ranks.txt.tmp"  // 成功写完后替换正式文件
+#define CUSTOM_RANK_FILE "custom_ranks.txt"  // 每行保存用户名和最高分
+#define CUSTOM_RANK_TEMP "custom_ranks.txt.tmp"  // 写完后替换正式文件
 
-// 只声明本模块使用的 Windows 文件替换函数，避免 windows.h 与 raylib 的窗口函数重名。
+// 使用 Windows 文件替换函数，避免 windows.h 与 raylib 的窗口函数重名
 __declspec(dllimport) int __stdcall MoveFileExA(const char *oldName, const char *newName, unsigned long flags);
 
 typedef struct {
-    char name[RANK_NAME];  // 玩家名，最多 31 字节
-    int points;  // 最终积分，越大越好
-    long long millis;  // 正式耗时，单位毫秒，同分时越短越好
+    char name[RANK_NAME];  // 玩家名
+    int points;  // 玩家最高分
 } CustomScore;
 
-typedef struct {
-    CustomRankConfig config;  // 本榜的完整配置键
-    CustomScore scores[CUSTOM_RANK_TOP];  // 当前配置前五名
-    int count;  // 本榜已有记录数
-} CustomBoard;
-
-static CustomBoard *g_customBoards;  // 当前页面加载的各配置榜单
-static int g_customCount;  // 配置榜单个数，包含请求查看的空榜
-static CustomScore g_customTop[CUSTOM_RANK_TOP];  // 所有自定义成绩中的个人最好前五名
-static int g_customTopCount;  // 积分榜当前显示人数
-static int g_customError;  // 读取失败时显示错误，禁止切换旧数据
+static CustomScore g_customTop[CUSTOM_RANK_TOP];  // 自定义积分前五名
+static int g_customTopCount;  // 当前上榜人数
+static int g_customError;  // 本次文件读取是否失败
 
 /*
- * 功能：检查积分榜配置键
- * 输入：config 为待检查的配置
- * 输出：无
- * 返回值：1 合法，0 非法
+ * 功能：将一条成绩插入前五名，同名只保留最高分
+ * 输入：scores、count 为榜单数组与人数地址，score 为提交成绩
+ * 输出：按分数降序更新数组，同分保持原顺序
+ * 返回值：1 榜单更新，0 未刷新或未入榜
  */
-static int validRankConfig(const CustomRankConfig *config)
+static int insertCustomScore(CustomScore scores[], int *count, CustomScore score)
 {
-    return config && config->formulaVersion == CUSTOM_RANK_FORMULA_VERSION &&
-        config->rows >= 2 && config->rows <= 6 && config->cols >= 2 && config->cols <= 6 &&
-        config->rows * config->cols % 2 == 0 && config->previewMillis >= 1000 && config->previewMillis <= 30000;
-}
-
-/*
- * 功能：比较配置键，确定分榜与浏览顺序
- * 输入：a、b 为两个配置键
- * 输出：无
- * 返回值：负数表示 a 在前，0 表示相同，正数表示 b 在前
- */
-static int compareConfig(const CustomRankConfig *a, const CustomRankConfig *b)
-{
-    if (a->formulaVersion != b->formulaVersion) return a->formulaVersion - b->formulaVersion;
-    if (a->rows != b->rows) return a->rows - b->rows;
-    if (a->cols != b->cols) return a->cols - b->cols;
-    return a->previewMillis - b->previewMillis;
-}
-
-/*
- * 功能：在配置数组中查找或新增一个空榜，保持配置升序
- * 输入：boards、count 为数组地址和条数地址，config 为合法配置
- * 输出：新增时重新分配数组并更新条数
- * 返回值：榜单下标，分配失败返回 -1
- */
-static int findCustomBoard(CustomBoard **boards, int *count, const CustomRankConfig *config)
-{
-    int i, pos = 0;  // 插入下标及移动记录的循环下标
-    CustomBoard *grown;  // 扩容后的数组，失败时保留旧数组
-    while (pos < *count && compareConfig(&(*boards)[pos].config, config) < 0) pos++;
-    if (pos < *count && compareConfig(&(*boards)[pos].config, config) == 0) return pos;
-    grown = realloc(*boards, ((size_t)*count + 1) * sizeof(*grown));
-    if (!grown) return -1;
-    *boards = grown;
-    for (i = *count; i > pos; i--) grown[i] = grown[i - 1];
-    grown[pos] = (CustomBoard){0};
-    grown[pos].config = *config;
-    (*count)++;
-    return pos;
-}
-
-/*
- * 功能：比较两条成绩
- * 输入：a、b 为待比较成绩
- * 输出：无
- * 返回值：a 分数更高或同分更快时为 1，否则为 0；完全相同不抢先
- */
-static int betterCustomScore(const CustomScore *a, const CustomScore *b)
-{
-    return a->points > b->points || (a->points == b->points && a->millis < b->millis);
-}
-
-/*
- * 功能：汇总所有配置的成绩，按分数保留各玩家的最好成绩及前五名
- * 输入：使用已经加载的自定义成绩
- * 输出：更新页面显示数组，不修改原始存档
- * 返回值：无
- */
-static void rebuildCustomTop(void)
-{
-    int k, j, i, dup, pos;  // 配置、成绩、重复玩家和插入位置下标
-    g_customTopCount = 0;
-    for (k = 0; k < g_customCount; k++) for (j = 0; j < g_customBoards[k].count; j++) {
-        CustomScore score = g_customBoards[k].scores[j];  // 本次参与排序的成绩
-        dup = -1;
-        for (i = 0; i < g_customTopCount; i++) if (!strcmp(g_customTop[i].name, score.name)) dup = i;
-        if (dup >= 0) {
-            if (!betterCustomScore(&score, &g_customTop[dup])) continue;
-            for (i = dup; i < g_customTopCount - 1; i++) g_customTop[i] = g_customTop[i + 1];
-            g_customTopCount--;
-        }
-        pos = 0;
-        while (pos < g_customTopCount && !betterCustomScore(&score, &g_customTop[pos])) pos++;
-        if (pos == CUSTOM_RANK_TOP) continue;
-        if (g_customTopCount < CUSTOM_RANK_TOP) g_customTopCount++;
-        for (i = g_customTopCount - 1; i > pos; i--) g_customTop[i] = g_customTop[i - 1];
-        g_customTop[pos] = score;
+    int i, dup = -1, pos = 0;  // 循环下标、同名记录和插入位置
+    for (i = 0; i < *count; i++) if (!strcmp(scores[i].name, score.name)) dup = i;
+    if (dup >= 0) {
+        if (score.points <= scores[dup].points) return 0;
+        for (i = dup; i < *count - 1; i++) scores[i] = scores[i + 1];
+        (*count)--;
     }
-}
-
-/*
- * 功能：从一行文本中读取整数，拒绝溢出或字段粘连
- * 输入：cursor 为当前文本位置，value 接收整数
- * 输出：成功后推进 cursor
- * 返回值：1 成功，0 格式错误
- */
-static int readCustomInteger(char **cursor, long long *value)
-{
-    char *end;  // 数值解析结束位置
-    errno = 0;
-    *value = strtoll(*cursor, &end, 10);
-    if (end == *cursor || errno == ERANGE || (*end && !isspace((unsigned char)*end))) return 0;
-    *cursor = end;
+    while (pos < *count && scores[pos].points >= score.points) pos++;
+    if (pos == CUSTOM_RANK_TOP) return 0;
+    if (*count < CUSTOM_RANK_TOP) (*count)++;
+    for (i = *count - 1; i > pos; i--) scores[i] = scores[i - 1];
+    scores[pos] = score;
     return 1;
 }
 
 /*
- * 功能：严格读取独立积分文件，不把读取失败当成空榜
- * 输入：boards、count 接收新数组和配置数，调用前置空
- * 输出：成功时填入全部配置，失败时释放已分配的数据
- * 返回值：1 成功（含文件不存在），0 读取或格式错误
+ * 功能：读取用户名和最高分
+ * 输入：scores、count 接收榜单及人数
+ * 输出：按分数降序排列的前五名，文件不存在时为空榜
+ * 返回值：1 读取成功，0 文件错误
  */
-static int loadCustomBoards(CustomBoard **boards, int *count)
+static int loadCustomScores(CustomScore scores[], int *count)
 {
-    FILE *fp = fopen(CUSTOM_RANK_FILE, "r");  // 独立存档，只读打开
-    char line[256];  // 一条记录的文本缓冲
-    int ok = 1;  // 遇到任意读取或格式错误后停止加载
+    FILE *fp = fopen(CUSTOM_RANK_FILE, "r");  // 独立积分文件
+    CustomScore score;  // 当前读入的用户名和分数
+    int fields, ok;  // 每行读到的字段数和最终读取结果
+    *count = 0;
     if (!fp) return errno == ENOENT;
-    if (!fgets(line, sizeof(line), fp) || strcmp(line, "MC_CUSTOM_RANKS 1\n") != 0) ok = 0;
-    while (ok && fgets(line, sizeof(line), fp)) {
-        char *cursor = line, *name, *end;  // 当前字段位置与用户名边界
-        long long values[6];  // 版本、行、列、预览毫秒、积分、耗时
-        CustomRankConfig config;  // 从文本恢复的配置键
-        CustomScore score = {0};  // 当前成绩
-        CustomBoard *board;  // 当前记录所属榜单
-        int i, k, pos;  // 字段下标、榜单下标和插入位置
-        if (!strchr(line, '\n') && !feof(fp)) { ok = 0; break; }
-        while (isspace((unsigned char)*cursor)) cursor++;
-        if (!*cursor) continue;
-        for (i = 0; i < 6; i++) if (!readCustomInteger(&cursor, &values[i])) break;
-        if (i != 6) { ok = 0; break; }
-        for (i = 0; i < 5; i++) if (values[i] < 0 || values[i] > INT_MAX) break;
-        if (i != 5 || values[5] < 0) { ok = 0; break; }
-        config = (CustomRankConfig){(int)values[0], (int)values[1], (int)values[2], (int)values[3]};
-        if (!validRankConfig(&config)) { ok = 0; break; }
-        while (isspace((unsigned char)*cursor)) cursor++;
-        name = cursor;
-        while (*cursor && !isspace((unsigned char)*cursor)) cursor++;
-        end = cursor;
-        while (isspace((unsigned char)*cursor)) cursor++;
-        if (end == name || end - name >= RANK_NAME || *cursor) { ok = 0; break; }
-        memcpy(score.name, name, (size_t)(end - name));
-        score.points = (int)values[4]; score.millis = values[5];
-        k = findCustomBoard(boards, count, &config);
-        if (k < 0) { ok = 0; break; }
-        board = &(*boards)[k];
-        for (i = 0; i < board->count; i++) if (strcmp(board->scores[i].name, score.name) == 0) break;
-        if (i != board->count || board->count == CUSTOM_RANK_TOP) { ok = 0; break; }
-        pos = board->count;
-        while (pos > 0 && betterCustomScore(&score, &board->scores[pos - 1])) {
-            board->scores[pos] = board->scores[pos - 1]; pos--;
-        }
-        board->scores[pos] = score; board->count++;
+    while ((fields = fscanf(fp, "%31s %d", score.name, &score.points)) == 2) {
+        insertCustomScore(scores, count, score);
     }
-    if (ferror(fp)) ok = 0;
-    if (fclose(fp) != 0) ok = 0;
-    if (!ok) { free(*boards); *boards = NULL; *count = 0; }
+    ok = fields == EOF && !ferror(fp);
+    fclose(fp);
     return ok;
 }
 
 /*
- * 功能：写入临时文件，成功关闭后替换正式存档
- * 输入：boards、count 为所有配置榜单
- * 输出：成功时更新独立积分存档，失败时保留旧文件
- * 返回值：1 保存成功，0 写入或替换失败
+ * 功能：保存自定义积分榜
+ * 输入：scores、count 为前五名和人数
+ * 输出：每行写入用户名、最高分
+ * 返回值：1 保存成功，0 文件错误
  */
-static int writeCustomBoards(const CustomBoard *boards, int count)
+static int writeCustomScores(const CustomScore scores[], int count)
 {
-    FILE *fp = fopen(CUSTOM_RANK_TEMP, "w");  // 同目录临时文件
-    int i, j, ok;  // 配置下标、成绩下标及写入结果
+    FILE *fp = fopen(CUSTOM_RANK_TEMP, "w");  // 先写临时文件，再替换原文件
+    int i, ok = 1;  // 当前成绩下标与写入结果
     if (!fp) return 0;
-    ok = fprintf(fp, "MC_CUSTOM_RANKS 1\n") > 0;
-    for (i = 0; ok && i < count; i++) for (j = 0; ok && j < boards[i].count; j++) {
-        const CustomRankConfig *c = &boards[i].config;  // 当前配置
-        const CustomScore *s = &boards[i].scores[j];  // 当前成绩
-        ok = fprintf(fp, "%d %d %d %d %d %lld %s\n", c->formulaVersion, c->rows, c->cols,
-                     c->previewMillis, s->points, s->millis, s->name) > 0;
-    }
-    if (fflush(fp) != 0) ok = 0;
+    for (i = 0; i < count; i++) if (fprintf(fp, "%s %d\n", scores[i].name, scores[i].points) < 0) ok = 0;
     if (fclose(fp) != 0) ok = 0;
-    // 1=替换已存在文件，8=完成磁盘写入后返回；失败时不先删除原存档
     if (ok) ok = MoveFileExA(CUSTOM_RANK_TEMP, CUSTOM_RANK_FILE, 1 | 8) != 0;
     if (!ok) remove(CUSTOM_RANK_TEMP);
     return ok;
 }
 
 /*
- * 功能：提交已通关的自定义积分，各配置仅保留每人最好成绩及前五名
- * 输入：name、config 为玩家与配置，finalScore 为积分，elapsedMillis 为耗时毫秒
- * 输出：需要更新时持久保存，只有保存成功才更新页面数据
- * 返回值：1 保存成功，0 未刷新或未入榜，-1 参数或存档错误
+ * 功能：提交已通关的最终积分，各玩家只保留最高分
+ * 输入：name 为已登录用户名，finalScore 为最终积分
+ * 输出：更新独立积分文件及页面榜单
+ * 返回值：1 保存成功，0 未刷新或未入榜，-1 文件错误
  */
-int saveCustomScore(const char name[], const CustomRankConfig *config, int finalScore, long long elapsedMillis)
+int saveCustomScore(const char name[], int finalScore)
 {
-    CustomBoard *boards = NULL, *board;  // 临时加载的完整榜单与本次修改的配置榜
-    CustomScore score = {0};  // 待提交成绩
-    int count = 0, k, i, dup = -1, pos;  // 配置数、下标、旧个人记录及插入位置
-    size_t length;  // 用户名的字节长度
-    if (!name || !validRankConfig(config) || finalScore < 0 || elapsedMillis < 0) return -1;
-    length = strlen(name);
-    if (!length || length >= RANK_NAME) return -1;
-    for (i = 0; i < (int)length; i++) if (isspace((unsigned char)name[i])) return -1;
-    strcpy(score.name, name); score.points = finalScore; score.millis = elapsedMillis;
-    if (!loadCustomBoards(&boards, &count)) return -1;
-    k = findCustomBoard(&boards, &count, config);
-    if (k < 0) { free(boards); return -1; }
-    board = &boards[k];
-    for (i = 0; i < board->count; i++) if (strcmp(board->scores[i].name, name) == 0) dup = i;
-    if (dup >= 0) {
-        if (!betterCustomScore(&score, &board->scores[dup])) { free(boards); return 0; }
-        for (i = dup; i < board->count - 1; i++) board->scores[i] = board->scores[i + 1];
-        board->count--;
-    }
-    pos = 0;
-    while (pos < board->count && !betterCustomScore(&score, &board->scores[pos])) pos++;
-    if (pos == CUSTOM_RANK_TOP) { free(boards); return 0; }
-    if (board->count < CUSTOM_RANK_TOP) board->count++;
-    for (i = board->count - 1; i > pos; i--) board->scores[i] = board->scores[i - 1];
-    board->scores[pos] = score;
-    if (!writeCustomBoards(boards, count)) { free(boards); return -1; }
-    free(g_customBoards); g_customBoards = boards; g_customCount = count;
-    rebuildCustomTop();
+    CustomScore scores[CUSTOM_RANK_TOP];  // 本次处理的榜单副本
+    CustomScore score;  // 本局提交的成绩
+    int count;  // 读取到的上榜人数
+    if (!loadCustomScores(scores, &count)) return -1;
+    strcpy(score.name, name);
+    score.points = finalScore;
+    if (!insertCustomScore(scores, &count, score)) return 0;
+    if (!writeCustomScores(scores, count)) return -1;
+    memcpy(g_customTop, scores, (size_t)count * sizeof(*scores));
+    g_customTopCount = count;
     return 1;
 }
 
 /*
- * 功能：在统一排行榜页选中自定义，并读取指定配置
- * 输入：config 为合法配置键
- * 输出：更新配置、榜单或错误提示
- * 返回值：1 准备成功，-1 配置或读取失败
+ * 功能：读取自定义积分榜并选择自定义选项
+ * 输入：无
+ * 输出：更新前五名或读取错误提示
+ * 返回值：1 成功，-1 文件错误
  */
-int resetCustomRankPage(const CustomRankConfig *config)
+int resetCustomRankPage(void)
 {
-    CustomBoard *boards = NULL;  // 本次读取的数据
-    int count = 0;  // 配置数，包含请求查看的空配置
     g_pageLevel = 4;
-    g_customError = 1;
-    if (!validRankConfig(config)) return -1;
-    if (!loadCustomBoards(&boards, &count)) return -1;
-    free(g_customBoards); g_customBoards = boards; g_customCount = count;
-    rebuildCustomTop();
-    g_customError = 0;
-    return 1;
+    g_customError = !loadCustomScores(g_customTop, &g_customTopCount);
+    return g_customError ? -1 : 1;
 }
 
 /*
