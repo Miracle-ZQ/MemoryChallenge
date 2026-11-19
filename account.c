@@ -86,7 +86,7 @@ void drawTextAt(Font font, const char *text, float x, float y, int fontSize,
                        Color color);
 void drawTextCentered(Font font, const char *text, float centerX, float y,
                              int fontSize, Color color);
-void drawInputBox(Font font, Rectangle box, const char *text,
+void drawInputBox(Font font, const char *label, Rectangle box, const char *text,
                          const char *placeholder, int focused);
 void drawStrengthHint(Font font);
 
@@ -530,40 +530,19 @@ void drawTextCentered(Font font, const char *text, float centerX, float y,
                (float)fontSize, 1.0f, color);
 }
 
-/*drawInputBox函数，画一个输入框：底色、边框、里面的文字，有焦点时再加一条光标
-输入：font：中文字体；box：输入框矩形；text：要显示的内容（密码已经换成星号）；
-placeholder：空框时的灰色提示；focused：1 表示这个框正在编辑
+/*drawInputBox函数，画一个输入框：上面一行标题、框里的内容、有焦点时加一条光标
+输入：font：中文字体；label：框上方的标题；box：输入框矩形；
+text：要显示的内容（密码已经换成星号）；placeholder：空框时的灰色提示；focused：1 表示正在编辑
 */
-void drawInputBox(Font font, Rectangle box, const char *text,
+void drawInputBox(Font font, const char *label, Rectangle box, const char *text,
                          const char *placeholder, int focused)
 {
-    Vector2 textSize;  // 已输入文字的宽度，用来放光标
-    float textX;  // 文字左边缘横坐标
-    float textY;  // 文字上边缘纵坐标
-    const char *visible = text;
-    float available = box.width - 38.0f;  // 左右留白及光标宽度
+    float textX = box.x + 16.0f;  // 文字左边缘横坐标
+    float textY = box.y + 16.0f;  // 文字上边缘纵坐标
 
+    drawTextAt(font, label, box.x, box.y - 24.0f, 19, COLOR_LABEL);  // 框上方的标题
     DrawRectangleRec(box, COLOR_BOX_FILL);  // 输入框底色
-    DrawRectangleLinesEx(box, (focused != 0) ? 2.5f : 1.5f,
-                         (focused != 0) ? COLOR_FOCUS : COLOR_BOX_LINE);
-
-    textX = box.x + 16.0f;
-    textY = box.y + (INPUT_H - 22.0f) / 2.0f;
-
-    // 输入只含 ASCII；显示能放下的末尾，保留完整账号和密码用于验证。
-    while (visible[0] != '\0' &&
-           MeasureTextEx(font, visible, 22.0f, 1.0f).x > available)
-    {
-        visible++;
-    }
-    // 裁剪区域使用窗口像素坐标，不会自动随二维相机缩放
-    {
-        Camera2D camera = getUiCamera();
-        Vector2 clip = GetWorldToScreen2D((Vector2){textX, box.y + 4}, camera);
-        BeginScissorMode((int)clip.x, (int)clip.y,
-                         (int)((box.width - 32) * camera.zoom),
-                         (int)((box.height - 8) * camera.zoom));
-    }
+    DrawRectangleLinesEx(box, 2.0f, (focused != 0) ? COLOR_FOCUS : COLOR_BOX_LINE);
 
     if (text[0] == '\0')  // 空框显示灰色提示词
     {
@@ -571,16 +550,15 @@ void drawInputBox(Font font, Rectangle box, const char *text,
     }
     else
     {
-        drawTextAt(font, visible, textX, textY, 22, COLOR_TEXT);
+        drawTextAt(font, text, textX, textY, 22, COLOR_TEXT);
     }
 
     if (focused != 0)  // 有焦点时在文字后面画一条竖线当光标
     {
-        textSize = MeasureTextEx(font, visible, 22.0f, 1.0f);
-        DrawRectangle((int)(textX + textSize.x + 2.0f), (int)(box.y + 14.0f),
+        float width = MeasureTextEx(font, text, 22.0f, 1.0f).x;  // 文字实际宽度
+        DrawRectangle((int)(textX + width + 2.0f), (int)(box.y + 14.0f),
                       2, 28, COLOR_FOCUS);
     }
-    EndScissorMode();
 }
 
 /*drawStrengthHint函数，在注册页显示当前密码的安全等级，边输入边变化
@@ -627,22 +605,17 @@ void drawAccountPage(Font font)//font：已经加载好中文字形的字体，�
     DrawRectangleRec(panel, COLOR_PANEL);  // 面板底色
     DrawRectangleLinesEx(panel, 2.0f, COLOR_PANEL_LINE);  // 面板边框
 
-    // 标题和副标题：登录页和注册页用不同文字
+    // 标题：登录页和注册页用不同文字
     drawTextCentered(font, (gRegisterMode != 0) ? "注册账号" : "账号登录",
                      PAGE_CENTER_X, 54.0f, 32, COLOR_TITLE);
-    drawTextCentered(font, (gRegisterMode != 0) ? "设置用户名和密码，注册后请登录"
-                                                : "请输入已有账号登录",
-                     PAGE_CENTER_X, 98.0f, 17, COLOR_HINT);
 
     // 用户名输入框
-    drawTextAt(font, "用户名", INPUT_X, 126.0f, 19, COLOR_LABEL);
-    drawInputBox(font, nameBox, gName, "请输入用户名", gFocus == 0);
+    drawInputBox(font, "用户名", nameBox, gName, "请输入用户名", gFocus == 0);
 
     // 密码输入框：先换成星号再显示，屏幕上不出现原密码
     memset(masked, '*', (size_t)gPasswordLength);
     masked[gPasswordLength] = '\0';
-    drawTextAt(font, "密码", INPUT_X, 214.0f, 19, COLOR_LABEL);
-    drawInputBox(font, passwordBox, masked, "请输入密码", gFocus == 1);
+    drawInputBox(font, "密码", passwordBox, masked, "请输入密码", gFocus == 1);
 
     if (gRegisterMode != 0)  // 注册页额外显示密码强度和确认密码框
     {
@@ -650,8 +623,8 @@ void drawAccountPage(Font font)//font：已经加载好中文字形的字体，�
 
         memset(maskedConfirm, '*', (size_t)gConfirmLength);
         maskedConfirm[gConfirmLength] = '\0';
-        drawTextAt(font, "再次输入密码", INPUT_X, 320.0f, 19, COLOR_LABEL);
-        drawInputBox(font, confirmBox, maskedConfirm, "请再输一次密码", gFocus == 2);
+        drawInputBox(font, "再次输入密码", confirmBox, maskedConfirm,
+                     "请再输一次密码", gFocus == 2);
     }
 
     // 主按钮和返回按钮：登录页是“登录”，注册页是“注册”
