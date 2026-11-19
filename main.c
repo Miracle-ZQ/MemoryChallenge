@@ -45,6 +45,7 @@ static const Rectangle hardButton = {250, 290, 300, 48};  // 高级
 static const Rectangle customButton = {250, 360, 300, 48};  // 难度选择页的自定义挑战入口
 static const Rectangle customStart = {180, 460, 210, 48};  // 自定义配置页的开始挑战按钮
 static const Rectangle customBack = {410, 460, 210, 48};  // 自定义配置页返回难度选择的按钮
+static const Rectangle resultRankButton = {180, 480, 210, 48};  // 自定义结算页查看积分榜
 static const Rectangle resultBackButton = {410, 480, 210, 48};  // 自定义结算页返回菜单
 static void drawCustomConfig(Font font, const CustomGameConfig *cfg);
 static void drawCustomResult(Font font, const CustomGameResult *r);
@@ -204,6 +205,11 @@ int main(void)
                 //自定义模式
                 if (isCustomGame()) {
                     if (isButtonClicked(resultBackButton)) page = PAGE_MENU;
+                    else if (isButtonClicked(resultRankButton)) {
+                        setCurrentPlayer(user.name);
+                        resetCustomRankPage();
+                        page = PAGE_RANK;
+                    }
                     break;
                 }
                 //经典模式
@@ -396,6 +402,7 @@ static void drawCustomResult(Font font, const CustomGameResult *r)
     drawText(font, TextFormat("主动亮牌 %d 次  剩余 %.2f%%", r->H, 100 * r->F_H), 330, 22, COLOR_HINT);
     drawText(font, TextFormat("耗时倍率 %.3f", 1.0 - r->B_minus), 370, 22, COLOR_HINT);
     drawText(font, TextFormat("最终积分 %d 分", r->finalScore), 415, 30, COLOR_OK);
+    drawButton(resultRankButton, "查看积分榜", font);
     drawButton(resultBackButton, "返回菜单", font);
 }
 
