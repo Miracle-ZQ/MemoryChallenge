@@ -15,25 +15,18 @@ static int cheatCount;  // 本局手动亮牌的使用次数，开局自动亮�
 static double revealEnd;  // 手动亮牌结束的时刻，单位为秒
 
 typedef enum {
-    GAME_IDLE,
-    GAME_PREVIEW,
-    GAME_SELECT,
-    GAME_REVEAL,
-    GAME_WAIT,
-    GAME_FINISHED,
-    GAME_EXITED
+    GAME_PREVIEW,   // 开局自动亮牌，供玩家记忆
+    GAME_SELECT,    // 玩家点击选牌，进行配对
+    GAME_REVEAL,    // 玩家使用手动亮牌，期间不能选牌
+    GAME_WAIT,      // 配对失败，等待错牌盖回
+    GAME_FINISHED   // 全部配对成功，本局通关
 } GamePhase;
-static GamePhase phase = GAME_IDLE;  // 游戏当前阶段，初始为尚未开始
+static GamePhase phase = GAME_PREVIEW;  // 游戏当前阶段，开局从自动亮牌开始
 
-static Texture2D faces[12];  // 十二种正面图片的纹理，按牌面编号取用
+#define CARD_POOL_SIZE 36  // 图片库中的图案总数
+static Texture2D faces[CARD_POOL_SIZE];  // 正面图片纹理，按牌面编号取用
 static Texture2D back;  // 所有卡牌共用的背面图片纹理
-static int usePictures = 0;  // 是否使用图片：1 使用，0 改用字符显示
-// 编号只用来配对；没有图片时按编号显示原终端版字符
-static const char symbols[] =  // 没有图片时使用的字符表，下标对应牌面编号
-    "!@#$%^&()-_=+[]{};:,.<>/?|~`"
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    "abcdefghijklmnopqrstuvwxyz"
-    "1234567890";
+
 // 每次根据窗口和棋盘计算，不再固定卡牌宽高和间距
 typedef struct {
     float left, top;  // 棋盘左上角在界面布局中的坐标
@@ -42,55 +35,32 @@ typedef struct {
     Rectangle revealButton;  // 本帧手动亮牌按钮的绘制和点击区域
 } GameLayout;
 
-// 初始化、洗牌、配对和通关判断
+
 static void initBoard(int level);
 static void shuffleBoard(void);
 static int checkMatch(void);
 static int isFinished(void);
-// 同一套坐标用于绘制和鼠标判断
+
 static float getPreviewProgress(void);
 static GameLayout getGameLayout(void);
 static Rectangle cardBounds(GameLayout layout, int row, int col);
 static void drawCardPicture(Texture2D picture, Rectangle bounds);
 
 /*
- * 功能：加载 12 种正面和卡背，窗口创建后调用一次
- * 输入：无，读取 assets/cards 中 back.png 和 00.png 到 11.png
- * 输出：保存图片；完全没有卡牌资源时采用字符卡牌
- * 返回值：1 可正常游戏，0 图片不完整或加载失败，失败时释放部分资源
+ * 功能：加载 36 种正面和卡背，窗口创建后调用一次
+ * 输入：无，读取 assets/cards 中 back.png 和 00.png 到 35.png
+ * 输出：保存卡牌正面和卡背纹理
+ * 返回值：无
  */
-int loadGameResources(void)
+void loadGameResources(void)
 {
-    int i;  // 循环下标，用于遍历图片或本轮所选的牌
-    int anyPicture = FileExists("assets/cards/back.png");  // 是否发现了任意卡牌图片，用来区分无图片和图片不完整
-    unloadGameResources();
-    for (i = 0; i < 12; i++) {
-        if (FileExists(TextFormat("assets/cards/%02d.png", i))) {
-            anyPicture = 1;
-        }
-    }
-    if (!anyPicture) {
-        return 1;
-    }
-
-    back = LoadTexture("assets/cards/back.png");
-    if (!IsTextureValid(back)) {
-        unloadGameResources();
-        return 0;
-    }
-    SetTextureFilter(back, TEXTURE_FILTER_BILINEAR);
-    for (i = 0; i < 12; i++) {
+    int i;  // 遍历图片库中的正面图片
+    back = LoadTexture("assets/cards/back.png");//加载背面卡片
+    SetTextureFilter(back, TEXTURE_FILTER_BILINEAR);//设置双线性过滤，让图片放大、缩小时的边缘更平滑
+    for (i = 0; i < CARD_POOL_SIZE; i++) {
         faces[i] = LoadTexture(TextFormat("assets/cards/%02d.png", i));
-        if (!IsTextureValid(faces[i])) {
-            unloadGameResources();
-            return 0;
-        }
-    }
-    for (i = 0; i < 12; i++) {
         SetTextureFilter(faces[i], TEXTURE_FILTER_BILINEAR);
     }
-    usePictures = 1;
-    return 1;
 }
 
 /*
@@ -120,7 +90,7 @@ void startGame(int level)
  * 功能：处理本帧的选牌、盖牌和通关，不等待输入或暂停窗口
  * 输入：seconds 是接收用时的地址，鼠标由 raylib 读取
  * 输出：更新棋盘；只有通关时才写入 *seconds，整秒用时从开局盖牌后计算
- * 返回值：0 继续，1 通关，2 退出或尚未开始
+ * 返回值：0 继续，1 通关，2 退出本局
  */
 int updateGame(int *seconds)
 {
@@ -128,42 +98,37 @@ int updateGame(int *seconds)
     double now = GetTime();  // 本帧当前时刻，单位为秒，用于判断各阶段是否到时
     GameLayout layout;  // 本帧使用的棋盘布局和按钮区域
 
-    if (phase == GAME_IDLE || phase == GAME_EXITED) {
-        return 2;
-    }
-    if (phase == GAME_FINISHED) {
+    if (phase == GAME_FINISHED) {//游戏通关，传秒数出去
         *seconds = elapsedSeconds;
         return 1;
     }
-    layout = getGameLayout();
-    // 亮牌和等待盖回期间，仍然可以退出
-    if (isButtonClicked(layout.backButton)) {
-        phase = GAME_EXITED;
+    layout = getGameLayout();  // 获取本帧卡牌布局和按钮区域
+    if (isButtonClicked(layout.backButton)) {  // 点击返回，通知主函数退出本局// 亮牌和等待盖回期间，仍然可以退出
         return 2;
     }
-    if (phase == GAME_PREVIEW) {
-        if (now >= previewEnd) {
+    if (phase == GAME_PREVIEW) {  // 开局亮牌阶段，暂不接受选牌
+        if (now >= previewEnd) {  // 记忆时间到，开始计时并进入选牌阶段
             startTime = now;
             phase = GAME_SELECT;
         }
         return 0;  // 刚盖牌这一帧不同时接收选牌
     }
 
-    elapsedSeconds = (int)(now - startTime);
-    if (phase == GAME_REVEAL) {
-        if (now >= revealEnd) {
+    elapsedSeconds = (int)(now - startTime);  // 更新整秒用时，包含手动亮牌和错牌等待
+    if (phase == GAME_REVEAL) {  // 手动亮牌阶段，暂不接受选牌
+        if (now >= revealEnd) {  // 手动亮牌结束，恢复选牌
             phase = GAME_SELECT;
         }
         return 0;  // 亮牌期间不允许选牌或重复触发
     }
-    if (phase == GAME_SELECT && isButtonClicked(layout.revealButton)) {
+    if (phase == GAME_SELECT && isButtonClicked(layout.revealButton)) {  // 点击亮牌按钮，记录次数并亮牌四秒
         cheatCount++;
         revealEnd = now + 4.0;
         phase = GAME_REVEAL;
         return 0;
     }
-    if (phase == GAME_WAIT) {
-        if (now >= hideTime) {
+    if (phase == GAME_WAIT) {  // 错牌展示阶段，等待盖回
+        if (now >= hideTime) {  // 等待结束，盖回错牌并恢复选牌
             for (i = 0; i < count; i++) {
                 state[selectedRows[i]][selectedCols[i]] = 0;
             }
@@ -172,32 +137,28 @@ int updateGame(int *seconds)
         }
         return 0;
     }
-    if (!IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-        return 0;
-    }
-    for (r = 0; r < rows; r++) {
+    for (r = 0; r < rows; r++) {  // 遍历棋盘，寻找被点击的牌
         for (c = 0; c < cols; c++) {
-            if (state[r][c] != 0 ||
-                !CheckCollisionPointRec(GetMousePosition(), cardBounds(layout, r, c))) {
-                continue;
+            if (state[r][c] != 0 || !isButtonClicked(cardBounds(layout, r, c))) {
+                continue;  // 跳过已翻开、已配对或未被点中的牌
             }
-            state[r][c] = 1;
-            selectedRows[count] = r;
+            state[r][c] = 1;  // 翻开当前卡牌
+            selectedRows[count] = r;  // 记录所选卡牌的行列位置
             selectedCols[count] = c;
-            count++;
-            if (count == groupSize) {
-                if (checkMatch()) {
+            count++;  // 本轮已选张数加一
+            if (count == groupSize) {  // 选满一组后进行配对判断
+                if (checkMatch()) {  // 图案全部相同，将本组标记为已配对
                     for (i = 0; i < count; i++) {
                         state[selectedRows[i]][selectedCols[i]] = 2;
                     }
                     count = 0;
-                    if (isFinished()) {
+                    if (isFinished()) {  // 全部配对完成，写回用时并通知主函数通关
                         phase = GAME_FINISHED;
                         *seconds = elapsedSeconds;
                         return 1;
                     }
                 } else {
-                    matchErrors++;
+                    matchErrors++;  // 配对失败，累计错误次数并安排一秒后盖回
                     hideTime = now + 1.0;
                     phase = GAME_WAIT;
                 }
@@ -241,10 +202,8 @@ void drawGame(Font font)
     int r, c;  // 遍历棋盘使用的行、列下标
     Rectangle bounds;  // 当前这张牌的绘制区域，与点击判定区域一致
     Color fill;  // 当前卡牌的背景颜色，已配对时使用不同颜色
-    const char *label;  // 本次要绘制的状态文字或牌面字符
-    Vector2 size;  // 牌面文字绘制后的宽和高，用来居中
+    const char *label;  // 本次要绘制的状态文字
     GameLayout layout = getGameLayout();  // 按当前窗口尺寸计算得到的本帧布局
-    float textSize;  // 随卡牌大小计算出的牌面字符字号
     DrawTextEx(font, (currentLevel == 1 ? "初级" : currentLevel == 2 ? "中级" : "高级"),
                (Vector2){-getUiCamera().offset.x / getUiCamera().zoom + 10, 8}, 18, 1, DARKGRAY);
     DrawTextEx(font, TextFormat("作弊：%d 次", cheatCount),
@@ -270,21 +229,10 @@ void drawGame(Font font)
             fill = state[r][c] == 2 ? (Color){200, 235, 210, 255} : WHITE;
             if (phase != GAME_PREVIEW && phase != GAME_REVEAL && state[r][c] == 0) {
                 DrawRectangleRec(bounds, (Color){75, 125, 185, 255});
-                if (usePictures) drawCardPicture(back, bounds);
+                drawCardPicture(back, bounds);
             } else {
                 DrawRectangleRec(bounds, fill);
-                if (usePictures) {
-                    drawCardPicture(faces[cards[r][c]], bounds);
-                } else {
-                    label = TextFormat("%c", symbols[cards[r][c]]);
-                    // 字符随卡牌一起变大，并始终居中
-                    textSize = (bounds.width < bounds.height ? bounds.width : bounds.height) * 0.62f;
-                    size = MeasureTextEx(font, label, textSize, 1);
-                    DrawTextEx(font, label,
-                        (Vector2){bounds.x + (bounds.width - size.x) / 2,
-                                  bounds.y + (bounds.height - size.y) / 2},
-                        textSize, 1, DARKGRAY);
-                }
+                drawCardPicture(faces[cards[r][c]], bounds);
             }
             DrawRectangleLinesEx(bounds, state[r][c] == 2 ? 3.0f : 1.0f,
                                  state[r][c] == 2 ? DARKGREEN : GRAY);
@@ -296,35 +244,29 @@ void drawGame(Font font)
 }
 
 /*
- * 功能：关闭窗口前释放游戏图片，也用于清理加载失败的部分资源
- * 输入：无
- * 输出：释放并清零纹理，恢复字符卡牌模式
- * 返回值：无
- */
-void unloadGameResources(void)
-{
-    int i;  // 循环下标，用于遍历图片或本轮所选的牌
-    for (i = 0; i < 12; i++) {
-        if (faces[i].id != 0) UnloadTexture(faces[i]);
-        faces[i] = (Texture2D){0};
-    }
-    if (back.id != 0) UnloadTexture(back);
-    back = (Texture2D){0};
-    usePictures = 0;
-}
-
-/*
- * 功能：按难度生成有序牌面并清空状态
+ * 功能：按难度随机抽取图案，按组生成牌面并清空状态
  * 输入：level 为已经检查有效的难度
  * 输出：更新内部数组、行列数及每组张数
  * 返回值：无
  */
 static void initBoard(int level)
 {
+    int pool[CARD_POOL_SIZE];  // 候选图案编号，抽取时不重复
+    int i, j, temp, kinds;
     int r, c, number = 0;  // 初始化用的行、列下标，以及已填入的牌数
     rows = level == 3 ? 6 : 4;
     cols = level == 1 ? 4 : level == 2 ? 5 : 6;
     groupSize = level == 3 ? 3 : 2;
+    kinds = rows * cols / groupSize;  // 初、中、高级分别抽取 8、10、12 种
+    for (i = 0; i < CARD_POOL_SIZE; i++) pool[i] = i;
+    // 每次从剩余候选中抽一个编号，交换到前面，保证本局图案互不重复
+    for (i = 0; i < kinds; i++) {
+        j = i + rand() % (CARD_POOL_SIZE - i);
+
+        temp = pool[i];
+        pool[i] = pool[j];
+        pool[j] = temp;
+    }
     for (r = 0; r < 6; r++) {
         for (c = 0; c < 6; c++) {
             cards[r][c] = 0;
@@ -333,7 +275,7 @@ static void initBoard(int level)
     }
     for (r = 0; r < rows; r++) {
         for (c = 0; c < cols; c++) {
-            cards[r][c] = number / groupSize;
+            cards[r][c] = pool[number / groupSize];
             number++;
         }
     }
@@ -350,6 +292,7 @@ static void shuffleBoard(void)
     int i, j, temp;  // 洗牌时的当前位置、随机交换位置，以及交换用的临时编号
     for (i = rows * cols - 1; i > 0; i--) {
         j = rand() % (i + 1);
+
         temp = cards[i / cols][i % cols];
         cards[i / cols][i % cols] = cards[j / cols][j % cols];
         cards[j / cols][j % cols] = temp;
@@ -393,19 +336,16 @@ static int isFinished(void)
  * 功能：计算开局或手动亮牌阶段还剩多少比例
  * 输入：使用当前阶段的截止时间、亮牌总秒数和当前时间
  * 输出：无，不改变游戏状态
- * 返回值：0 到 1，刚开始为 1，时间到后为 0
+ * 返回值：剩余时间除以总时长所得的比例
  */
 static float getPreviewProgress(void)
 {
-    float progress;  // 剩余亮牌时间的比例，限制在 0 到 1 之间
+    float progress;  // 剩余亮牌时间的比例
     if (phase == GAME_REVEAL) {
         progress = (float)((revealEnd - GetTime()) / 4.0);
     } else {
-        if (previewSeconds <= 0) return 0;
         progress = (float)((previewEnd - GetTime()) / previewSeconds);
     }
-    if (progress < 0) progress = 0;
-    if (progress > 1) progress = 1;
     return progress;
 }
 
@@ -477,6 +417,6 @@ static void drawCardPicture(Texture2D picture, Rectangle bounds)
     Rectangle dest = {bounds.x + (bounds.width - picture.width * scale) / 2,  // 图片最终绘制的位置和大小，下面两行继续填写矩形成员
                       bounds.y + (bounds.height - picture.height * scale) / 2,
                       picture.width * scale, picture.height * scale};
-    DrawTexturePro(picture, (Rectangle){0, 0, (float)picture.width, (float)picture.height},
-                   dest, (Vector2){0, 0}, 0, WHITE);
+    DrawTexturePro(picture, (Rectangle){0, 0, (float)picture.width, (float)picture.height},//截取图片是否完整
+                   dest, (Vector2){0, 0}, 0, WHITE);//dest：画的位置与大小；{0,0}原点偏移；0偏移角；WHITE不改变颜色
 }

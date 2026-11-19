@@ -11,7 +11,7 @@ static void polygon(Vector2 center, Vector2 points[], int count, Color color)
 
 /*
  * 功能：按编号绘制不同轮廓与颜色的几何牌面
- * 输入：id 为 0 到 11，使用 512x512 的绘制坐标
+ * 输入：id 为 0 到 35，使用 512x512 的绘制坐标
  * 输出：图案画面
  * 返回值：无
  */
@@ -21,7 +21,7 @@ static void drawFace(int id)
     Vector2 points[10];
     Color colors[12] = {(Color){0, 150, 145, 255}, BLUE, ORANGE, PURPLE, GOLD, DARKGREEN,
                         MAROON, SKYBLUE, DARKPURPLE, PINK, (Color){242, 178, 0, 255}, LIME};
-    Color color = colors[id];
+    Color color = colors[id % 12];
     Vector2 center = {256, 256};
     switch (id) {
         case 0:
@@ -76,13 +76,129 @@ static void drawFace(int id)
             }
             DrawCircleV(center, 54, GOLD);
             break;
+        case 12:  // 太阳
+            DrawCircleV(center, 95, color);
+            for (i = 0; i < 12; i++) {
+                float a = i * 30 * DEG2RAD;
+                DrawLineEx((Vector2){256+120*cosf(a),256+120*sinf(a)},
+                           (Vector2){256+170*cosf(a),256+170*sinf(a)},14,color);
+            }
+            break;
+        case 13:  // 云朵
+            DrawCircle(190,240,75,color); DrawCircle(270,200,95,color);
+            DrawCircle(345,255,65,color); DrawRectangle(155,240,220,90,color);
+            break;
+        case 14:  // 雨伞
+            DrawCircleSector((Vector2){256,260},150,180,360,36,color);
+            DrawLineEx((Vector2){256,260},(Vector2){256,365},14,color);
+            DrawRing((Vector2){228,365},22,36,0,180,24,color);
+            break;
+        case 15:  // 山峰
+            DrawTriangle((Vector2){90,390},(Vector2){430,390},(Vector2){260,105},color);
+            DrawTriangle((Vector2){212,185},(Vector2){308,185},(Vector2){260,105},WHITE);
+            break;
+        case 16:  // 树
+            DrawRectangle(238,285,36,130,color);
+            DrawTriangle((Vector2){100,310},(Vector2){412,310},(Vector2){256,80},color);
+            break;
+        case 17:  // 房屋
+            DrawTriangle((Vector2){80,235},(Vector2){432,235},(Vector2){256,90},color);
+            DrawRectangle(125,235,262,170,color); DrawRectangle(225,295,62,110,WHITE);
+            break;
+        case 18:  // 钥匙
+            DrawRing((Vector2){180,200},45,73,0,360,40,color);
+            DrawLineEx((Vector2){225,245},(Vector2){365,385},28,color);
+            DrawLineEx((Vector2){320,340},(Vector2){355,305},28,color);
+            break;
+        case 19:  // 锁
+            DrawRing((Vector2){256,205},65,90,180,360,36,color);
+            DrawRectangle(140,205,232,190,color); DrawCircle(256,280,23,WHITE);
+            DrawRectangle(246,280,20,60,WHITE);
+            break;
+        case 20:  // 旗帜
+            DrawRectangle(145,90,18,330,color);
+            DrawTriangle((Vector2){163,100},(Vector2){163,280},(Vector2){390,190},color);
+            break;
+        case 21:  // 箭头
+            DrawRectangle(90,215,205,82,color);
+            DrawTriangle((Vector2){270,120},(Vector2){270,392},(Vector2){430,256},color);
+            break;
+        case 22:  // 音符
+            DrawCircle(185,350,55,color); DrawRectangle(225,110,18,240,color);
+            DrawRectanglePro((Rectangle){235,110,130,38},(Vector2){0,0},20,color);
+            break;
+        case 23:  // 蝴蝶结
+            DrawTriangle((Vector2){100,120},(Vector2){100,392},center,color);
+            DrawTriangle(center,(Vector2){412,392},(Vector2){412,120},color);
+            DrawCircleV(center,32,color);
+            break;
+        case 24:  // 眼睛
+            DrawEllipse(256,256,180,95,color); DrawEllipse(256,256,135,63,WHITE);
+            DrawCircleV(center,48,color);
+            break;
+        case 25:  // 皇冠
+            points[0]=(Vector2){105,150};points[1]=(Vector2){200,240};
+            points[2]=(Vector2){256,100};points[3]=(Vector2){312,240};
+            points[4]=(Vector2){407,150};points[5]=(Vector2){365,380};points[6]=(Vector2){147,380};
+            polygon((Vector2){256,290},points,7,color);
+            break;
+        case 26:  // 船
+            DrawTriangle((Vector2){90,300},(Vector2){256,420},(Vector2){422,300},color);
+            DrawRectangle(245,90,16,195,color);
+            DrawTriangle((Vector2){230,100},(Vector2){100,275},(Vector2){230,275},color);
+            break;
+        case 27:  // 鱼
+            DrawEllipse(225,256,120,80,color);
+            DrawTriangle((Vector2){320,256},(Vector2){420,350},(Vector2){420,162},color);
+            DrawCircle(160,235,12,WHITE);
+            break;
+        case 28:  // 咖啡杯
+            DrawRing((Vector2){355,245},38,60,0,360,32,color);
+            DrawRectangle(125,160,220,180,color); DrawRectangle(100,365,300,16,color);
+            break;
+        case 29:  // 礼物
+            DrawRectangle(120,210,272,190,color); DrawRectangle(100,175,312,45,color);
+            DrawRectangle(240,175,32,225,WHITE);
+            DrawRing((Vector2){210,140},24,38,0,360,24,color);
+            DrawRing((Vector2){302,140},24,38,0,360,24,color);
+            break;
+        case 30:  // 骰子
+            DrawRectangleRounded((Rectangle){110,110,292,292},0.15f,12,color);
+            DrawCircle(180,180,22,WHITE);DrawCircle(332,180,22,WHITE);
+            DrawCircle(256,256,22,WHITE);DrawCircle(180,332,22,WHITE);DrawCircle(332,332,22,WHITE);
+            break;
+        case 31:  // 时钟
+            DrawRing(center,135,155,0,360,48,color);
+            DrawLineEx(center,(Vector2){256,150},18,color);
+            DrawLineEx(center,(Vector2){335,300},18,color);
+            break;
+        case 32:  // 纸飞机
+            DrawTriangle((Vector2){80,220},(Vector2){240,280},(Vector2){425,90},color);
+            DrawTriangle((Vector2){240,280},(Vector2){330,420},(Vector2){425,90},color);
+            break;
+        case 33:  // 仙人掌
+            DrawRectangleRounded((Rectangle){230,90,52,320},0.8f,12,color);
+            DrawLineEx((Vector2){150,180},(Vector2){150,280},38,color);
+            DrawLineEx((Vector2){150,280},(Vector2){250,280},38,color);
+            DrawLineEx((Vector2){360,130},(Vector2){360,225},38,color);
+            DrawLineEx((Vector2){360,225},(Vector2){260,225},38,color);
+            break;
+        case 34:  // 蘑菇
+            DrawRectangle(215,245,82,155,color);
+            DrawCircleSector((Vector2){256,260},160,180,360,36,color);
+            DrawCircle(190,210,24,WHITE); DrawCircle(290,160,22,WHITE);DrawCircle(340,230,18,WHITE);
+            break;
+        case 35:  // 梯子
+            DrawRectangle(155,90,24,330,color);DrawRectangle(333,90,24,330,color);
+            for(i=0;i<5;i++) DrawRectangle(179,120+i*60,154,18,color);
+            break;
     }
 }
 
 /*
- * 功能：导出 12 张正面和统一卡背，每张为 512x512 PNG
+ * 功能：导出 36 张正面和统一卡背，每张为 512x512 PNG
  * 输入：无，运行目录应为项目目录，assets/cards 必须已创建
- * 输出：assets/cards/00.png 到 11.png 及 back.png
+ * 输出：assets/cards/00.png 到 35.png 及 back.png
  * 返回值：0 成功，1 导出失败
  */
 int main(void)
@@ -95,11 +211,11 @@ int main(void)
     InitWindow(64, 64, "Original card asset generator");
     canvas = LoadRenderTexture(1024, 1024);
     camera.zoom = 2;
-    for (id = 0; id <= 12; id++) {
+    for (id = 0; id <= 36; id++) {
         BeginTextureMode(canvas);
         ClearBackground(WHITE);
         BeginMode2D(camera);
-        if (id < 12) {
+        if (id < 36) {
             drawFace(id);
         } else {
             DrawRectangle(0, 0, 512, 512, (Color){42, 75, 125, 255});
@@ -112,7 +228,7 @@ int main(void)
         image = LoadImageFromTexture(canvas.texture);
         ImageFlipVertical(&image);
         ImageResize(&image, 512, 512);
-        if (!ExportImage(image, id == 12 ? "assets/cards/back.png" : TextFormat("assets/cards/%02d.png", id))) ok = 0;
+        if (!ExportImage(image, id == 36 ? "assets/cards/back.png" : TextFormat("assets/cards/%02d.png", id))) ok = 0;
         UnloadImage(image);
     }
     UnloadRenderTexture(canvas);
