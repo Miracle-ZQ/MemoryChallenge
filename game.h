@@ -87,9 +87,9 @@ int validateCustomConfig(const CustomGameConfig *cfg);
 
 /*
  * 功能：按自定义配置开始两两配对的新局
- * 输入：cfg 为棋盘行列数和开局展示秒数，卡牌纹理应已加载
+ * 输入：cfg 为棋盘行列数和开局展示秒数
  * 输出：生成并打乱棋盘，清零计数和时间，进入开局亮牌阶段
- * 返回值：1 启动成功，0 配置非法或卡牌资源缺失；失败时不改变旧局
+ * 返回值：1 启动成功，0 配置非法；失败时不改变旧局
  */
 int startCustomGame(const CustomGameConfig *cfg);
 
