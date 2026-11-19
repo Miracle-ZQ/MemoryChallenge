@@ -201,7 +201,6 @@ int main(void)
         EndDrawing();
     }
 
-    unloadGameResources();
     unloadUiResources(font);
     CloseWindow();
     return 0;

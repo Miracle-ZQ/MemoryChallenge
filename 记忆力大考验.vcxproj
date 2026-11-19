@@ -182,11 +182,35 @@
     <None Include="assets\cards\09.png" />
     <None Include="assets\cards\10.png" />
     <None Include="assets\cards\11.png" />
+    <None Include="assets\cards\12.png" />
+    <None Include="assets\cards\13.png" />
+    <None Include="assets\cards\14.png" />
+    <None Include="assets\cards\15.png" />
+    <None Include="assets\cards\16.png" />
+    <None Include="assets\cards\17.png" />
+    <None Include="assets\cards\18.png" />
+    <None Include="assets\cards\19.png" />
+    <None Include="assets\cards\20.png" />
+    <None Include="assets\cards\21.png" />
+    <None Include="assets\cards\22.png" />
+    <None Include="assets\cards\23.png" />
+    <None Include="assets\cards\24.png" />
+    <None Include="assets\cards\25.png" />
+    <None Include="assets\cards\26.png" />
+    <None Include="assets\cards\27.png" />
+    <None Include="assets\cards\28.png" />
+    <None Include="assets\cards\29.png" />
+    <None Include="assets\cards\30.png" />
+    <None Include="assets\cards\31.png" />
+    <None Include="assets\cards\32.png" />
+    <None Include="assets\cards\33.png" />
+    <None Include="assets\cards\34.png" />
+    <None Include="assets\cards\35.png" />
     <None Include="assets\cards\back.png" />
     <None Include="assets\cards\README.md" />
     <None Include="tools\generate_cards.c" />
   </ItemGroup>
   <Target Name="CopyCardImages" AfterTargets="Build">
-    <Copy SourceFiles="$(ProjectDir)assets\cards\00.png;$(ProjectDir)assets\cards\01.png;$(ProjectDir)assets\cards\02.png;$(ProjectDir)assets\cards\03.png;$(ProjectDir)assets\cards\04.png;$(ProjectDir)assets\cards\05.png;$(ProjectDir)assets\cards\06.png;$(ProjectDir)assets\cards\07.png;$(ProjectDir)assets\cards\08.png;$(ProjectDir)assets\cards\09.png;$(ProjectDir)assets\cards\10.png;$(ProjectDir)assets\cards\11.png;$(ProjectDir)assets\cards\back.png" DestinationFolder="$(OutDir)assets\cards" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(ProjectDir)assets\cards\00.png;$(ProjectDir)assets\cards\01.png;$(ProjectDir)assets\cards\02.png;$(ProjectDir)assets\cards\03.png;$(ProjectDir)assets\cards\04.png;$(ProjectDir)assets\cards\05.png;$(ProjectDir)assets\cards\06.png;$(ProjectDir)assets\cards\07.png;$(ProjectDir)assets\cards\08.png;$(ProjectDir)assets\cards\09.png;$(ProjectDir)assets\cards\10.png;$(ProjectDir)assets\cards\11.png;$(ProjectDir)assets\cards\12.png;$(ProjectDir)assets\cards\13.png;$(ProjectDir)assets\cards\14.png;$(ProjectDir)assets\cards\15.png;$(ProjectDir)assets\cards\16.png;$(ProjectDir)assets\cards\17.png;$(ProjectDir)assets\cards\18.png;$(ProjectDir)assets\cards\19.png;$(ProjectDir)assets\cards\20.png;$(ProjectDir)assets\cards\21.png;$(ProjectDir)assets\cards\22.png;$(ProjectDir)assets\cards\23.png;$(ProjectDir)assets\cards\24.png;$(ProjectDir)assets\cards\25.png;$(ProjectDir)assets\cards\26.png;$(ProjectDir)assets\cards\27.png;$(ProjectDir)assets\cards\28.png;$(ProjectDir)assets\cards\29.png;$(ProjectDir)assets\cards\30.png;$(ProjectDir)assets\cards\31.png;$(ProjectDir)assets\cards\32.png;$(ProjectDir)assets\cards\33.png;$(ProjectDir)assets\cards\34.png;$(ProjectDir)assets\cards\35.png;$(ProjectDir)assets\cards\back.png" DestinationFolder="$(OutDir)assets\cards" SkipUnchangedFiles="true" />
   </Target>
 </Project>

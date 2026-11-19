@@ -103,6 +103,78 @@
     <None Include="assets\cards\11.png">
       <Filter>07 卡牌图片</Filter>
     </None>
+    <None Include="assets\cards\12.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
+    <None Include="assets\cards\13.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
+    <None Include="assets\cards\14.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
+    <None Include="assets\cards\15.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
+    <None Include="assets\cards\16.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
+    <None Include="assets\cards\17.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
+    <None Include="assets\cards\18.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
+    <None Include="assets\cards\19.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
+    <None Include="assets\cards\20.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
+    <None Include="assets\cards\21.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
+    <None Include="assets\cards\22.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
+    <None Include="assets\cards\23.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
+    <None Include="assets\cards\24.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
+    <None Include="assets\cards\25.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
+    <None Include="assets\cards\26.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
+    <None Include="assets\cards\27.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
+    <None Include="assets\cards\28.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
+    <None Include="assets\cards\29.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
+    <None Include="assets\cards\30.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
+    <None Include="assets\cards\31.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
+    <None Include="assets\cards\32.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
+    <None Include="assets\cards\33.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
+    <None Include="assets\cards\34.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
+    <None Include="assets\cards\35.png">
+      <Filter>07 卡牌图片</Filter>
+    </None>
     <None Include="assets\cards\back.png">
       <Filter>07 卡牌图片</Filter>
     </None>
