@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <math.h>
 #include "raylib.h"
 #include "ui.h"
 #include "rank.h"
@@ -44,8 +43,6 @@ static const Rectangle customStart = {180, 460, 210, 48};  // 自定义配置页
 static const Rectangle customBack = {410, 460, 210, 48};  // 自定义配置页返回难度选择的按钮
 static const Rectangle resultRankButton = {180, 480, 210, 48};  // 结算页查看本局配置积分榜
 static const Rectangle resultBackButton = {410, 480, 210, 48};  // 自定义结算页返回菜单
-// 将游戏配置转换为排行榜使用的整数毫秒配置键
-static CustomRankConfig makeCustomRankConfig(const CustomGameConfig *cfg);
 static void drawCustomConfig(Font font, const CustomGameConfig *cfg);
 static void drawCustomResult(Font font, const CustomGameResult *r, int saveResult);
 
@@ -78,7 +75,6 @@ int main(void)
 
     CustomGameConfig config = {4, 4, 5};  // 设置页可调整的配置，默认 4×4、开局展示 5 秒
     CustomGameResult customResult = {0};  // 从游戏模块读取的通关快照，供结算页使用
-    CustomRankConfig playedConfig = {0};  // 开局时保存的配置键，结算入榜和查看本局榜单均使用它
 
     srand((unsigned int)time(NULL));
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);  // 允许调整窗口大小
@@ -172,10 +168,8 @@ int main(void)
                 }
                 if (isButtonClicked(customBack)) page = PAGE_LEVEL;
                 else if (isButtonClicked(customStart) && validateCustomConfig(&config)) {
-                    if (startCustomGame(&config)) {
-                        playedConfig = makeCustomRankConfig(&config);
-                        page = PAGE_GAME;
-                    }
+                    startCustomGame(&config);
+                    page = PAGE_GAME;
                 }
                 break;
             }
@@ -186,8 +180,7 @@ int main(void)
                     if (isCustomGame()) {
                         getCustomGameResult(&customResult);
                         // 只在通关事件中提交一次；主动亮牌不取消自定义模式入榜资格
-                        saveResult = saveCustomScore(user.name, &playedConfig, customResult.finalScore,
-                            (long long)llround(customResult.elapsedSeconds * 1000.0));
+                        saveResult = saveCustomScore(user.name, customResult.finalScore);
                     } else if (!getGameCheats()) {// 作弊局只显示结算，不向排行榜提交成绩
                         saveResult = saveScore(user.name, level, seconds);
                     }
@@ -198,15 +191,17 @@ int main(void)
                 break;
 
             case PAGE_RESULT:
+                //自定义模式
                 if (isCustomGame()) {
                     if (isButtonClicked(resultBackButton)) page = PAGE_MENU;
                     else if (isButtonClicked(resultRankButton)) {
                         setCurrentPlayer(user.name);
-                        resetCustomRankPage(&playedConfig);  // 在统一排行榜页选中“自定义”
+                        resetCustomRankPage();  // 自定义排行榜
                         page = PAGE_RANK;
                     }
                     break;
                 }
+                //经典模式
                 if (isButtonClicked(backButton)) {//返回菜单
                     page = PAGE_MENU;
                 } else if (isButtonClicked(rankButton)) {//查看排行榜
@@ -386,17 +381,4 @@ static void drawCustomResult(Font font, const CustomGameResult *r, int saveResul
              saveResult == 1 ? COLOR_OK : saveResult == 0 ? COLOR_HINT : COLOR_ERROR);
     drawButton(resultRankButton, "查看积分榜", font);
     drawButton(resultBackButton, "返回菜单", font);
-}
-
-/*
- * 功能：将游戏配置转换为排行榜配置键
- * 输入：cfg 为已经校验通过的游戏配置
- * 输出：无，不修改原配置
- * 返回值：带公式版本、行列和预览毫秒数的配置键
- */
-static CustomRankConfig makeCustomRankConfig(const CustomGameConfig *cfg)
-{
-    CustomRankConfig key = {CUSTOM_RANK_FORMULA_VERSION, cfg->rows, cfg->cols,
-                           (int)llround(cfg->previewSeconds * 1000.0)};  // 整数毫秒避免浮点配置比较歧义
-    return key;
 }
