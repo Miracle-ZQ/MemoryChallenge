@@ -23,7 +23,8 @@ typedef enum {
     PAGE_CUSTOM_CONFIG,
     PAGE_GAME,
     PAGE_RESULT,
-    PAGE_RANK
+    PAGE_RANK,
+    PAGE_INTRODUCE
 } Page;
 
 //按钮位置
@@ -32,6 +33,8 @@ static const Rectangle registerButton = {420, 180, 200, 48};  // 注册
 static const Rectangle switchButton = {180, 180, 440, 48};  // 切换账号
 static const Rectangle gameButton = {180, 260, 440, 48};  // 开始游戏
 static const Rectangle rankButton = {180, 340, 440, 48};  // 排行榜
+static const Rectangle introduceButton = {180, 405, 440, 40};  // 主菜单的玩法说明按钮
+static const Rectangle introduceBackButton = {300, 530, 200, 44};  // 玩法说明页返回主菜单
 static const Rectangle exitButton = {300, 460, 200, 48};  // 退出程序
 static const Rectangle backButton = {300, 460, 200, 48};  // 返回菜单
 static const Rectangle easyButton = {250, 150, 300, 48};  // 初级
@@ -50,6 +53,8 @@ static void drawCustomResult(Font font, const CustomGameResult *r, int saveResul
 static void drawText(Font font, const char text[], float y, float size, Color color);
 // 绘制主菜单
 static void drawMenu(Font font, int loggedIn);
+// 绘制玩法说明页
+static void drawIntroduce(Font font);
 // 绘制难度选择页
 static void drawLevels(Font font);
 
@@ -125,6 +130,8 @@ int main(void)
                     setCurrentPlayer(user.name);
                     resetRankPage();
                     page = PAGE_RANK;
+                } else if (isButtonClicked(introduceButton)) {//玩法说明
+                    page = PAGE_INTRODUCE;
                 } else if (isButtonClicked(exitButton)) {//退出
                     running = 0;
                 }
@@ -211,6 +218,10 @@ int main(void)
                 }
                 break;
 
+            case PAGE_INTRODUCE:
+                if (isButtonClicked(introduceBackButton)) page = PAGE_MENU;
+                break;
+
             case PAGE_RANK:
                 if (updateRankPage()) {
                     page = PAGE_MENU;
@@ -267,6 +278,9 @@ int main(void)
                 drawButton(rankButton, "排行榜", font);
                 drawButton(backButton, "返回", font);
                 break;
+            case PAGE_INTRODUCE:
+                drawIntroduce(font);
+                break;
             case PAGE_RANK:
                 drawRankPage(font);
                 break;
@@ -307,6 +321,7 @@ static void drawMenu(Font font, int loggedIn)
         drawButton(switchButton, "切换账号", font);
         drawButton(gameButton, "开始游戏", font);
         drawButton(rankButton, "排行榜", font);
+        drawButton(introduceButton, "玩法说明", font);
     } else {
         drawButton(loginButton, "登录", font);
         drawButton(registerButton, "注册", font);
@@ -354,7 +369,7 @@ static void drawCustomConfig(Font font, const CustomGameConfig *cfg)
     drawText(font, TextFormat("牌数 %d  配对 %d 组  基准 %d 秒", cfg->rows*cfg->cols, groups, 5*groups), 395, 20, COLOR_TITLE);
     drawText(font, TextFormat("棋盘倍率 %.2f  开局倍率 %.2f", b, p), 425, 20, COLOR_HINT);
     if (validateCustomConfig(cfg)) drawButton(customStart, "开始挑战", font);
-    else drawText(font, "牌数必须为偶数", 475, 20, COLOR_ERROR);
+    else drawText(font, "牌数必须为偶数", 520, 20, COLOR_ERROR);
     drawButton(customBack, "返回", font);
     drawText(font, "主动亮牌每次剩余积分乘 0.97，耗时最多扣 30%", 540, 18, COLOR_HINT);
 }
@@ -381,4 +396,27 @@ static void drawCustomResult(Font font, const CustomGameResult *r, int saveResul
              saveResult == 1 ? COLOR_OK : saveResult == 0 ? COLOR_HINT : COLOR_ERROR);
     drawButton(resultRankButton, "查看积分榜", font);
     drawButton(resultBackButton, "返回菜单", font);
+}
+
+/*
+ * 功能：绘制普通模式和自定义挑战的玩法说明
+ * 输入：font 为共用中文字体
+ * 输出：规则文字和返回按钮，不改变游戏状态
+ * 返回值：无
+ */
+static void drawIntroduce(Font font)
+{
+    drawText(font, "玩法说明", 40, 34, COLOR_TITLE);
+    drawText(font, "基本玩法", 100, 24, COLOR_OK);
+    drawText(font, "先记住开局展示的图案，再点击卡牌寻找相同图案。", 140, 20, COLOR_TITLE);
+    drawText(font, "初级 4x4、中级 4x5 两张配对；高级 6x6 三张配对。", 175, 20, COLOR_TITLE);
+    drawText(font, "错配后保持亮面并锁定 1 秒，到期同时盖回。", 210, 20, COLOR_TITLE);
+    drawText(font, "亮牌可查看全部图案 4 秒；游戏中的返回按钮退出本局。", 245, 20, COLOR_TITLE);
+    drawText(font, "普通模式按用时排名，使用亮牌的局不入榜。", 280, 20, COLOR_HINT);
+    drawText(font, "自定义挑战", 330, 24, COLOR_OK);
+    drawText(font, "行列可选 2 到 6，总牌数须为偶数；开局展示 1 到 30 秒。", 370, 20, COLOR_TITLE);
+    drawText(font, "固定两张配对，正确一组加 100 基础分，错误一次扣 40 分。", 405, 20, COLOR_TITLE);
+    drawText(font, "通关按棋盘及展示时间调整积分；每次主动亮牌再乘 0.97。", 440, 20, COLOR_TITLE);
+    drawText(font, "耗时以每组 5 秒为基准，最多扣 30%；积分榜保留个人最高分。", 475, 19, COLOR_HINT);
+    drawButton(introduceBackButton, "返回", font);
 }
