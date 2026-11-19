@@ -78,7 +78,7 @@ int main(void)
     int gameResult;  // 游戏更新结果：0 继续，1 通关，2 退出本局
     int saveResult = 0;  // 排行榜保存结果：1 成功，0 未更新，-1 出错
 
-    CustomGameConfig config = {4, 4, 1.0};  // 默认 4×4，k 为 1.0
+    CustomGameConfig config = {4, 4, 5, 1.0};  // 默认 4×4、亮牌 5 秒，k 为 1.0
     CustomGameResult customResult = {0};  // 从游戏模块读取的通关快照，供结算页使用
 
     srand((unsigned int)time(NULL));
@@ -164,20 +164,22 @@ int main(void)
                 break;
 
             case PAGE_CUSTOM_CONFIG: {
-                int i;  // 参数行编号：0 行数、1 列数、2 耗时曲线系数
-                for (i = 0; i < 3; i++) {
+                int i;  // 参数行编号：0 行数、1 列数、2 亮牌时间、3 耗时参数
+                for (i = 0; i < 4; i++) {
                     // 本帧调整量：点击加号为 1，减号为 -1，未点击为 0
-                    int delta = isButtonClicked((Rectangle){520, 160.0f+i*65.0f, 48, 40}) -
-                                isButtonClicked((Rectangle){300, 160.0f+i*65.0f, 48, 40});
+                    int delta = isButtonClicked((Rectangle){520, 130.0f+i*55.0f, 48, 40}) -
+                                isButtonClicked((Rectangle){300, 130.0f+i*55.0f, 48, 40});
                     if (i == 0 && config.rows+delta >= 2 && config.rows+delta <= 6) config.rows += delta;
                     if (i == 1 && config.cols+delta >= 2 && config.cols+delta <= 6) config.cols += delta;
-                    if (i == 2) {
+                    if (i == 2 && config.previewSeconds + delta >= 1 && config.previewSeconds + delta <= 30)
+                        config.previewSeconds += delta;
+                    if (i == 3) {
                         int tenths = (int)lround(config.k * 10.0) + delta;
                         if (tenths >= 1 && tenths <= 50) config.k = tenths / 10.0;
                     }
                 }
                 if (isButtonClicked(customBack)) page = PAGE_LEVEL;
-                else if (isButtonClicked(customStart) && validateCustomConfig(&config)) {
+                else if (isButtonClicked(customStart) && isEven(&config)) {
                     startCustomGame(&config);
                     page = PAGE_GAME;
                 }
@@ -351,22 +353,30 @@ static void drawLevels(Font font)
 static void drawCustomConfig(Font font, const CustomGameConfig *cfg)
 {
     int i, groups = cfg->rows * cfg->cols / 2;  // 控件行下标和当前棋盘的总配对组数
-    const char *labels[] = {"棋盘行数", "棋盘列数", "耗时参数 k"};  // 三行参数控件的标题
-    double ti = customReferencePerGroup(groups);
+    const char *labels[] = {"棋盘行数", "棋盘列数", "亮牌时间", "耗时参数 k"};  // 四行参数控件的标题
     drawText(font, "自定义积分挑战", 70, 34, COLOR_TITLE);
-    for (i = 0; i < 3; i++) {
-        DrawTextEx(font, labels[i], (Vector2){130, 168.0f+i*65.0f}, 22, 1, COLOR_TITLE);
-        drawButton((Rectangle){300, 160.0f+i*65.0f, 48, 40}, "-", font);
-        drawButton((Rectangle){520, 160.0f+i*65.0f, 48, 40}, "+", font);
-        drawText(font, i == 2 ? TextFormat("%.1f", cfg->k) : TextFormat("%d", i == 0 ? cfg->rows : cfg->cols), 168.0f+i*65.0f, 24, COLOR_TITLE);
+    for (i = 0; i < 4; i++) {
+        DrawTextEx(font, labels[i], (Vector2){130, 138.0f+i*55.0f}, 22, 1, COLOR_TITLE);
+        drawButton((Rectangle){300, 130.0f+i*55.0f, 48, 40}, "-", font);
+        drawButton((Rectangle){520, 130.0f+i*55.0f, 48, 40}, "+", font);
+        const char *value;
+        if (i == 3) value = TextFormat("%.1f", cfg->k);
+        else if (i == 2) value = TextFormat("%d 秒", cfg->previewSeconds);
+        else value = TextFormat("%d", i == 0 ? cfg->rows : cfg->cols);
+        drawText(font, value, 138.0f+i*55.0f, 24, COLOR_TITLE);
     }
     drawText(font, TextFormat("牌数 %d  配对 %d 组", cfg->rows * cfg->cols, groups), 360, 20, COLOR_TITLE);
-    drawText(font, TextFormat("基准亮牌 %.1f 秒  基准通关 %.1f 秒", ti, groups * ti), 395, 20, COLOR_TITLE);
-    drawText(font, "k 越大，耗时倍率在基准时间前后变化越快", 425, 18, COLOR_HINT);
-    if (validateCustomConfig(cfg)) drawButton(customStart, "开始挑战", font);
-    else drawText(font, "牌数必须为偶数", 520, 20, COLOR_ERROR);
+    if (isEven(cfg)) {
+        CustomGameResult preview;
+        calculateCustomResult(cfg, 0, 0, 0, 0.0, &preview);
+        drawText(font, TextFormat("总分倍率：棋盘 %.2f 倍   开局亮牌 %.2f 倍", preview.B_plus, 1.0 / preview.K), 395, 20, COLOR_TITLE);
+        drawText(font, "k 越大，最快通关加分越多，基准前后得分变化越快", 425, 18, COLOR_HINT);
+        drawButton(customStart, "开始挑战", font);
+    } else {
+        drawText(font, "牌数必须为偶数", 425, 20, COLOR_ERROR);
+    }
     drawButton(customBack, "返回", font);
-    drawText(font, "开局自行查看，点击盖牌后开始计时", 540, 18, COLOR_HINT);
+    drawText(font, "亮牌时间到后自动盖牌并开始计时", 540, 18, COLOR_HINT);
 }
 
 /*
@@ -378,13 +388,13 @@ static void drawCustomConfig(Font font, const CustomGameConfig *cfg)
 static void drawCustomResult(Font font, const CustomGameResult *r)
 {
     drawText(font, "挑战完成", 55, 34, COLOR_TITLE);
-    drawText(font, TextFormat("正确 %d 组  错误 %d 次  基础积分 %.2f", r->correct, r->wrong, r->baseScore), 120, 22, COLOR_TITLE);
-    drawText(font, TextFormat("棋盘倍率 %.3f", r->boardMultiplier), 165, 22, COLOR_HINT);
-    drawText(font, TextFormat("开局展示 %.2f 秒 / 基准 %.2f 秒", r->observationSeconds, r->referenceObservation), 210, 22, COLOR_TITLE);
-    drawText(font, TextFormat("亮牌时间倍率 %.3f", r->observationFactor), 250, 22, COLOR_HINT);
-    drawText(font, TextFormat("用时 %.2f 秒 / 基准 %.2f 秒", r->elapsedSeconds, r->referenceElapsed), 290, 22, COLOR_TITLE);
-    drawText(font, TextFormat("主动亮牌 %d 次  剩余 %.2f%%", r->reveals, 100 * r->revealFactor), 330, 22, COLOR_HINT);
-    drawText(font, TextFormat("耗时倍率 %.3f", r->timeMultiplier), 370, 22, COLOR_HINT);
+    drawText(font, TextFormat("正确 %d 组  错误 %d 次  基础积分 %.2f", r->R, r->W, r->S), 120, 22, COLOR_TITLE);
+    drawText(font, TextFormat("棋盘倍率 %.3f", r->B_plus), 165, 22, COLOR_HINT);
+    drawText(font, TextFormat("开局展示 %.2f 秒 / 基准 %.2f 秒", r->T, r->T0), 210, 22, COLOR_TITLE);
+    drawText(font, TextFormat("亮牌时间倍率 %.3f", r->K), 250, 22, COLOR_HINT);
+    drawText(font, TextFormat("用时 %.2f 秒 / 基准 %.2f 秒", r->t, r->Tref), 290, 22, COLOR_TITLE);
+    drawText(font, TextFormat("主动亮牌 %d 次  剩余 %.2f%%", r->H, 100 * r->F_H), 330, 22, COLOR_HINT);
+    drawText(font, TextFormat("耗时倍率 %.3f", 1.0 - r->B_minus), 370, 22, COLOR_HINT);
     drawText(font, TextFormat("最终积分 %d 分", r->finalScore), 415, 30, COLOR_OK);
     drawButton(resultBackButton, "返回菜单", font);
 }
@@ -405,7 +415,7 @@ static void drawIntroduce(Font font)
     drawText(font, "亮牌可查看全部图案 4 秒；游戏中的返回按钮退出本局。", 245, 20, COLOR_TITLE);
     drawText(font, "普通模式按用时排名，使用亮牌的局不入榜。", 280, 20, COLOR_HINT);
     drawText(font, "自定义挑战", 330, 24, COLOR_OK);
-    drawText(font, "行列可选 2 到 6，总牌数须为偶数；开局自行查看。", 370, 20, COLOR_TITLE);
+    drawText(font, "行列可选 2 到 6，总牌数须为偶数；开局按设置时间亮牌。", 370, 20, COLOR_TITLE);
     drawText(font, "固定两张配对，错配立即盖回并锁定 1 秒。", 405, 20, COLOR_TITLE);
     drawText(font, "通关按棋盘及展示时间调整积分；每次主动亮牌再乘 0.97。", 440, 20, COLOR_TITLE);
     drawText(font, "自定义模式只显示本局积分。", 475, 19, COLOR_HINT);
