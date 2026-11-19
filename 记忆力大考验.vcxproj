@@ -127,7 +127,9 @@
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup>
-    <RaylibDir>$(ProjectDir)..\raylib\raylib-6.2_win64_msvc16\</RaylibDir>
+    <!-- raylib 优先用仓库里自带的那份，找不到再用仓库旁边单独下载的 -->
+    <RaylibDir Condition="Exists('$(ProjectDir)raylib\include\raylib.h')">$(ProjectDir)raylib\</RaylibDir>
+    <RaylibDir Condition="'$(RaylibDir)'==''">$(ProjectDir)..\raylib\raylib-6.2_win64_msvc16\</RaylibDir>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
