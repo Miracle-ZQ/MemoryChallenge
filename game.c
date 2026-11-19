@@ -89,7 +89,7 @@ typedef enum {
     GAME_PREVIEW,   // 开局自动亮牌，供玩家记忆
     GAME_SELECT,    // 玩家点击选牌，进行配对
     GAME_REVEAL,    // 玩家使用手动亮牌，期间不能选牌
-    GAME_WAIT,      // 普通局等待盖回；自定义局已盖回，仅锁定操作
+    GAME_WAIT,      // 错配牌保持亮面一秒，到期同时盖回并恢复选牌
     GAME_FINISHED   // 全部配对成功，本局通关
 } GamePhase;
 static GamePhase phase = GAME_PREVIEW;  // 游戏当前阶段，开局从自动亮牌开始
@@ -246,13 +246,7 @@ int updateGame(int *seconds)
         }
         return 0;  // 亮牌期间不允许选牌或重复触发
     }
-    if (phase == GAME_SELECT && (!customMode || count == 0) && isButtonClicked(layout.revealButton)) {  // 点击亮牌按钮，记录次数并亮牌四秒
-        cheatCount++;
-        revealEnd = now + 4.0;
-        phase = GAME_REVEAL;
-        return 0;
-    }
-    if (phase == GAME_WAIT) {  // 普通局等待错牌盖回，自定义局等待操作解锁
+    if (phase == GAME_WAIT) {  // 错配期间保持亮面并锁定选牌
         if (now >= hideTime) {  // 等待结束，盖回错牌并恢复选牌
             for (i = 0; i < count; i++) {
                 state[selectedRows[i]][selectedCols[i]] = 0;
@@ -260,6 +254,13 @@ int updateGame(int *seconds)
             count = 0;
             phase = GAME_SELECT;
         }
+        // 自定义局到期后继续处理本帧点击，避免恢复选牌时吞掉输入
+        if (!customMode || phase == GAME_WAIT) return 0;
+    }
+    if (phase == GAME_SELECT && (!customMode || count == 0) && isButtonClicked(layout.revealButton)) {  // 点击亮牌按钮，记录次数并亮牌四秒
+        cheatCount++;
+        revealEnd = now + 4.0;
+        phase = GAME_REVEAL;
         return 0;
     }
     for (r = 0; r < rows; r++) {  // 遍历棋盘，寻找被点击的牌
@@ -286,10 +287,6 @@ int updateGame(int *seconds)
                     }
                 } else {
                     matchErrors++;  // 配对失败，累计错误次数并安排一秒后盖回
-                    if (customMode) {
-                        for (i = 0; i < count; i++) state[selectedRows[i]][selectedCols[i]] = 0;
-                        count = 0;
-                    }
                     hideTime = now + 1.0;
                     phase = GAME_WAIT;
                 }
@@ -342,7 +339,12 @@ void drawGame(Font font)
     if (phase == GAME_PREVIEW || phase == GAME_REVEAL) {
         label = phase == GAME_PREVIEW ? "记忆倒计时" : "亮牌倒计时";
     } else {
-        label = TextFormat("用时：%d 秒   配对错误：%d 次", elapsedSeconds, matchErrors);
+        if (customMode && phase == GAME_WAIT) {
+            label = TextFormat("用时：%d 秒   配对错误：%d 次   锁定：%.1f 秒",
+                               elapsedSeconds, matchErrors, hideTime - GetTime());
+        } else {
+            label = TextFormat("用时：%d 秒   配对错误：%d 次", elapsedSeconds, matchErrors);
+        }
     }
     DrawTextEx(font, label, (Vector2){-getUiCamera().offset.x / getUiCamera().zoom + 10, 32}, 16, 1, DARKGRAY);
     if (phase == GAME_PREVIEW || phase == GAME_REVEAL) {
