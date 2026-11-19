@@ -1,12 +1,5 @@
 #define _CRT_SECURE_NO_WARNINGS
 
-
-
-
-
-
-
-
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -18,7 +11,6 @@
 #define RANK_TOP    5
 #define RANK_NAME   32
 #define RANK_FILE   "ranks.txt"
-
 
 #define BTN_W       150.0f
 #define BTN_H       44.0f
@@ -41,9 +33,6 @@ static char  g_player[RANK_NAME];
 
 static const Rectangle g_backButton = { 40.0f, 520.0f, BTN_W, BTN_H };
 
-
-
-
 static const char *levelName(int level)
 {
     if (level == 1) return "初级";
@@ -52,12 +41,6 @@ static const char *levelName(int level)
     if (level == 4) return "自定义";
     return "未知";
 }
-
-
-
-
-
-
 
 static void sortLevel(int k)
 {
@@ -70,7 +53,6 @@ static void sortLevel(int k)
         tmp = g_rank[k][i];
         j = i;
 
-
         while (j > 0 && g_rank[k][j - 1].seconds > tmp.seconds)
         {
             g_rank[k][j] = g_rank[k][j - 1];
@@ -81,18 +63,11 @@ static void sortLevel(int k)
     }
 }
 
-
-
-
-
-
-
 static void loadRanks(void)
 {
     FILE *fp;
     char line[128];
     int k;
-
 
     for (k = 0; k < RANK_LEVELS; k++)
     {
@@ -107,7 +82,6 @@ static void loadRanks(void)
     if (fp == NULL)
     {
 
-
         if (errno == ENOENT) g_loaded = 1;
         else g_readError = 1;
 
@@ -119,7 +93,6 @@ static void loadRanks(void)
         char name[RANK_NAME];
         int level;
         int seconds;
-
 
         if (sscanf(line, "%d %31s %d", &level, name, &seconds) != 3) continue;
         if (level < 1 || level > RANK_LEVELS) continue;
@@ -135,17 +108,10 @@ static void loadRanks(void)
 
     fclose(fp);
 
-
     for (k = 0; k < RANK_LEVELS; k++) sortLevel(k);
 
     g_loaded = 1;
 }
-
-
-
-
-
-
 
 static int writeRanks(void)
 {
@@ -170,12 +136,6 @@ static int writeRanks(void)
     return 1;
 }
 
-
-
-
-
-
-
 int saveScore(const char name[], int level, int seconds)
 {
     int k;
@@ -183,7 +143,6 @@ int saveScore(const char name[], int level, int seconds)
     int pos;
     int cnt;
     int dup;
-
 
     if (name == NULL || name[0] == '\0') return -1;
     if (level < 1 || level > RANK_LEVELS) return -1;
@@ -193,7 +152,6 @@ int saveScore(const char name[], int level, int seconds)
     if (g_readError) return -1;
 
     k = level - 1;
-
 
     dup = -1;
     for (i = 0; i < g_count[k]; i++)
@@ -205,16 +163,12 @@ int saveScore(const char name[], int level, int seconds)
         }
     }
 
-
     if (dup >= 0 && seconds >= g_rank[k][dup].seconds) return 0;
-
-
 
     pos = 0;
     while (pos < g_count[k] && g_rank[k][pos].seconds <= seconds) pos++;
 
     if (pos >= RANK_TOP) return 0;
-
 
     if (dup >= 0)
     {
@@ -222,7 +176,6 @@ int saveScore(const char name[], int level, int seconds)
         g_count[k]--;
         if (pos > dup) pos--;
     }
-
 
     cnt = g_count[k];
     if (cnt < RANK_TOP) cnt++;
@@ -234,7 +187,6 @@ int saveScore(const char name[], int level, int seconds)
     g_rank[k][pos].seconds = seconds;
     g_count[k] = cnt;
 
-
     if (!writeRanks())
     {
         g_loaded = 0;
@@ -245,23 +197,11 @@ int saveScore(const char name[], int level, int seconds)
     return 1;
 }
 
-
-
-
-
-
-
 void setCurrentPlayer(const char name[])
 {
     strncpy(g_player, name, RANK_NAME - 1);
     g_player[RANK_NAME - 1] = '\0';
 }
-
-
-
-
-
-
 
 void resetRankPage(void)
 {
@@ -270,12 +210,6 @@ void resetRankPage(void)
 
     if (!g_loaded) loadRanks();
 }
-
-
-
-
-
-
 
 static Rectangle levelButtonRect(int level)
 {
@@ -288,12 +222,6 @@ static Rectangle levelButtonRect(int level)
 
     return rect;
 }
-
-
-
-
-
-
 
 int updateRankPage(void)
 {
@@ -314,12 +242,6 @@ int updateRankPage(void)
     return 0;
 }
 
-
-
-
-
-
-
 void drawRankPage(Font font)
 {
     int level;
@@ -328,11 +250,9 @@ void drawRankPage(Font font)
     float w;
     char text[128];
 
-
     w = MeasureTextEx(font, "排行榜", 36.0f, 2.0f).x;
     DrawTextEx(font, "排行榜", (Vector2){ (800.0f - w) / 2.0f, 40.0f },
                36.0f, 2.0f, (Color){ 232, 240, 252, 255 });
-
 
     for (level = 1; level <= RANK_LEVELS + 1; level++)
     {
@@ -352,7 +272,6 @@ void drawRankPage(Font font)
     if (g_pageLevel == 4) { drawCustomRankPage(font); return; }
     k = g_pageLevel - 1;
 
-
     if (g_count[k] == 0)
     {
         w = MeasureTextEx(font, "暂无成绩", 24.0f, 1.0f).x;
@@ -361,17 +280,14 @@ void drawRankPage(Font font)
         return;
     }
 
-
     DrawTextEx(font, "名次", (Vector2){ 150.0f, 196.0f }, 22.0f, 1.0f, (Color){ 185, 198, 218, 255 });
     DrawTextEx(font, "用户名", (Vector2){ 250.0f, 196.0f }, 22.0f, 1.0f, (Color){ 185, 198, 218, 255 });
     DrawTextEx(font, "用时", (Vector2){ 480.0f, 196.0f }, 22.0f, 1.0f, (Color){ 185, 198, 218, 255 });
     DrawRectangle(130, 226, 420, 1, (Color){ 120, 135, 158, 255 });
 
-
     for (i = 0; i < g_count[k]; i++)
     {
         float y = 244.0f + i * 44.0f;
-
 
         if (strcmp(g_rank[k][i].name, g_player) == 0)
             DrawRectangle(120, (int)y - 6, 440, 36, (Color){ 60, 110, 180, 120 });
@@ -387,10 +303,8 @@ void drawRankPage(Font font)
     }
 }
 
-
 #define CUSTOM_RANK_FILE "custom_ranks.txt"
 #define CUSTOM_RANK_TEMP "custom_ranks.txt.tmp"
-
 
 __declspec(dllimport) int __stdcall MoveFileExA(const char *oldName, const char *newName, unsigned long flags);
 
@@ -402,12 +316,6 @@ typedef struct {
 static CustomScore g_customTop[CUSTOM_RANK_TOP];
 static int g_customTopCount;
 static int g_customError;
-
-
-
-
-
-
 
 static int insertCustomScore(CustomScore scores[], int *count, CustomScore score)
 {
@@ -426,12 +334,6 @@ static int insertCustomScore(CustomScore scores[], int *count, CustomScore score
     return 1;
 }
 
-
-
-
-
-
-
 static int loadCustomScores(CustomScore scores[], int *count)
 {
     FILE *fp = fopen(CUSTOM_RANK_FILE, "r");
@@ -447,12 +349,6 @@ static int loadCustomScores(CustomScore scores[], int *count)
     return ok;
 }
 
-
-
-
-
-
-
 static int writeCustomScores(const CustomScore scores[], int count)
 {
     FILE *fp = fopen(CUSTOM_RANK_TEMP, "w");
@@ -464,12 +360,6 @@ static int writeCustomScores(const CustomScore scores[], int count)
     if (!ok) remove(CUSTOM_RANK_TEMP);
     return ok;
 }
-
-
-
-
-
-
 
 int saveCustomScore(const char name[], int finalScore)
 {
@@ -486,12 +376,6 @@ int saveCustomScore(const char name[], int finalScore)
     return 1;
 }
 
-
-
-
-
-
-
 int resetCustomRankPage(void)
 {
     g_pageLevel = 4;
@@ -499,22 +383,10 @@ int resetCustomRankPage(void)
     return g_customError ? -1 : 1;
 }
 
-
-
-
-
-
-
 int updateCustomRankPage(void)
 {
     return isButtonClicked(g_backButton);
 }
-
-
-
-
-
-
 
 void drawCustomRankPage(Font font)
 {

@@ -1,119 +1,7 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef RLGL_H
 #define RLGL_H
 
 #define RLGL_VERSION  "6.0"
-
-
-
 
 #if defined(_WIN32) && defined(BUILD_LIBTYPE_SHARED)
     #define RLAPI __declspec(dllexport)
@@ -123,16 +11,13 @@
     #define RLAPI __declspec(dllimport)
 #endif
 
-
 #ifndef RLAPI
     #define RLAPI
 #endif
 
-
 #ifndef TRACELOG
     #define TRACELOG(level, ...) (void)0
 #endif
-
 
 #ifndef RL_MALLOC
     #define RL_MALLOC(sz)     malloc(sz)
@@ -147,7 +32,6 @@
     #define RL_FREE(p)        free(p)
 #endif
 
-
 #if !defined(GRAPHICS_API_OPENGL_SOFTWARE) && \
     !defined(GRAPHICS_API_OPENGL_11) && \
     !defined(GRAPHICS_API_OPENGL_21) && \
@@ -157,7 +41,6 @@
     !defined(GRAPHICS_API_OPENGL_ES3)
         #define GRAPHICS_API_OPENGL_33
 #endif
-
 
 #if defined(GRAPHICS_API_OPENGL_11) || defined(GRAPHICS_API_OPENGL_SOFTWARE)
     #if defined(GRAPHICS_API_OPENGL_21)
@@ -174,41 +57,28 @@
     #endif
 #endif
 
-
 #if defined(GRAPHICS_API_OPENGL_SOFTWARE)
     #define GRAPHICS_API_OPENGL_11
 #endif
-
-
 
 #if defined(GRAPHICS_API_OPENGL_21)
     #define GRAPHICS_API_OPENGL_33
 #endif
 
-
 #if defined(GRAPHICS_API_OPENGL_43)
     #define GRAPHICS_API_OPENGL_33
 #endif
-
 
 #if defined(GRAPHICS_API_OPENGL_ES3)
     #define GRAPHICS_API_OPENGL_ES2
 #endif
 
-
-
-
-
-
 #ifndef RL_DEFAULT_BATCH_BUFFER_ELEMENTS
     #if defined(GRAPHICS_API_OPENGL_11) || defined(GRAPHICS_API_OPENGL_33)
-
 
         #define RL_DEFAULT_BATCH_BUFFER_ELEMENTS  8192
     #endif
     #if defined(GRAPHICS_API_OPENGL_ES2)
-
-
 
         #define RL_DEFAULT_BATCH_BUFFER_ELEMENTS  2048
     #endif
@@ -223,16 +93,13 @@
     #define RL_DEFAULT_BATCH_MAX_TEXTURE_UNITS       4
 #endif
 
-
 #ifndef RL_MAX_MATRIX_STACK_SIZE
     #define RL_MAX_MATRIX_STACK_SIZE                32
 #endif
 
-
 #ifndef RL_MAX_SHADER_LOCATIONS
     #define RL_MAX_SHADER_LOCATIONS                 32
 #endif
-
 
 #ifndef RL_CULL_DISTANCE_NEAR
     #define RL_CULL_DISTANCE_NEAR                 0.05
@@ -240,7 +107,6 @@
 #ifndef RL_CULL_DISTANCE_FAR
     #define RL_CULL_DISTANCE_FAR                4000.0
 #endif
-
 
 #define RL_TEXTURE_WRAP_S                       0x2802
 #define RL_TEXTURE_WRAP_T                       0x2803
@@ -261,20 +127,16 @@
 #define RL_TEXTURE_WRAP_MIRROR_REPEAT           0x8370
 #define RL_TEXTURE_WRAP_MIRROR_CLAMP            0x8742
 
-
 #define RL_MODELVIEW                            0x1700
 #define RL_PROJECTION                           0x1701
 #define RL_TEXTURE                              0x1702
-
 
 #define RL_LINES                                0x0001
 #define RL_TRIANGLES                            0x0004
 #define RL_QUADS                                0x0007
 
-
 #define RL_UNSIGNED_BYTE                        0x1401
 #define RL_FLOAT                                0x1406
-
 
 #define RL_STREAM_DRAW                          0x88E0
 #define RL_STREAM_READ                          0x88E1
@@ -286,11 +148,9 @@
 #define RL_DYNAMIC_READ                         0x88E9
 #define RL_DYNAMIC_COPY                         0x88EA
 
-
 #define RL_FRAGMENT_SHADER                      0x8B30
 #define RL_VERTEX_SHADER                        0x8B31
 #define RL_COMPUTE_SHADER                       0x91B9
-
 
 #define RL_ZERO                                 0
 #define RL_ONE                                  1
@@ -308,7 +168,6 @@
 #define RL_CONSTANT_ALPHA                       0x8003
 #define RL_ONE_MINUS_CONSTANT_ALPHA             0x8004
 
-
 #define RL_FUNC_ADD                             0x8006
 #define RL_MIN                                  0x8007
 #define RL_MAX                                  0x8008
@@ -325,8 +184,6 @@
 
 #define RL_READ_FRAMEBUFFER                     0x8CA8
 #define RL_DRAW_FRAMEBUFFER                     0x8CA9
-
-
 
 #ifndef RL_DEFAULT_SHADER_ATTRIB_LOCATION_POSITION
     #define RL_DEFAULT_SHADER_ATTRIB_LOCATION_POSITION    0
@@ -359,9 +216,6 @@
     #define RL_DEFAULT_SHADER_ATTRIB_LOCATION_INSTANCETRANSFORM 9
 #endif
 
-
-
-
 #if !defined(__cplusplus)
 #if (defined(__STDC__) && __STDC_VERSION__ >= 199901L) || (defined(_MSC_VER) && _MSC_VER >= 1800)
     #include <stdbool.h>
@@ -382,7 +236,6 @@ typedef struct Matrix {
 #define RL_MATRIX_TYPE
 #endif
 
-
 typedef struct rlVertexBuffer {
     int elementCount;
 
@@ -400,22 +253,14 @@ typedef struct rlVertexBuffer {
     unsigned int vboId[5];
 } rlVertexBuffer;
 
-
-
-
-
 typedef struct rlDrawCall {
     int mode;
     int vertexCount;
     int vertexAlignment;
 
-
     unsigned int textureId;
 
-
-
 } rlDrawCall;
-
 
 typedef struct rlRenderBatch {
     int bufferCount;
@@ -427,7 +272,6 @@ typedef struct rlRenderBatch {
     float currentDepth;
 } rlRenderBatch;
 
-
 typedef enum {
     RL_OPENGL_SOFTWARE = 0,
     RL_OPENGL_11,
@@ -437,8 +281,6 @@ typedef enum {
     RL_OPENGL_ES_20,
     RL_OPENGL_ES_30
 } rlGlVersion;
-
-
 
 typedef enum {
     RL_LOG_ALL = 0,
@@ -450,8 +292,6 @@ typedef enum {
     RL_LOG_FATAL,
     RL_LOG_NONE
 } rlTraceLogLevel;
-
-
 
 typedef enum {
     RL_PIXELFORMAT_UNCOMPRESSED_GRAYSCALE = 1,
@@ -480,9 +320,6 @@ typedef enum {
     RL_PIXELFORMAT_COMPRESSED_ASTC_8x8_RGBA
 } rlPixelFormat;
 
-
-
-
 typedef enum {
     RL_TEXTURE_FILTER_POINT = 0,
     RL_TEXTURE_FILTER_BILINEAR,
@@ -491,7 +328,6 @@ typedef enum {
     RL_TEXTURE_FILTER_ANISOTROPIC_8X,
     RL_TEXTURE_FILTER_ANISOTROPIC_16X,
 } rlTextureFilter;
-
 
 typedef enum {
     RL_BLEND_ALPHA = 0,
@@ -503,7 +339,6 @@ typedef enum {
     RL_BLEND_CUSTOM,
     RL_BLEND_CUSTOM_SEPARATE
 } rlBlendMode;
-
 
 typedef enum {
     RL_SHADER_LOC_VERTEX_POSITION = 0,
@@ -537,7 +372,6 @@ typedef enum {
 #define RL_SHADER_LOC_MAP_DIFFUSE       RL_SHADER_LOC_MAP_ALBEDO
 #define RL_SHADER_LOC_MAP_SPECULAR      RL_SHADER_LOC_MAP_METALNESS
 
-
 typedef enum {
     RL_SHADER_UNIFORM_FLOAT = 0,
     RL_SHADER_UNIFORM_VEC2,
@@ -554,15 +388,12 @@ typedef enum {
     RL_SHADER_UNIFORM_SAMPLER2D
 } rlShaderUniformDataType;
 
-
 typedef enum {
     RL_SHADER_ATTRIB_FLOAT = 0,
     RL_SHADER_ATTRIB_VEC2,
     RL_SHADER_ATTRIB_VEC3,
     RL_SHADER_ATTRIB_VEC4
 } rlShaderAttributeDataType;
-
-
 
 typedef enum {
     RL_ATTACHMENT_COLOR_CHANNEL0 = 0,
@@ -577,7 +408,6 @@ typedef enum {
     RL_ATTACHMENT_STENCIL = 200,
 } rlFramebufferAttachType;
 
-
 typedef enum {
     RL_ATTACHMENT_CUBEMAP_POSITIVE_X = 0,
     RL_ATTACHMENT_CUBEMAP_NEGATIVE_X = 1,
@@ -589,15 +419,10 @@ typedef enum {
     RL_ATTACHMENT_RENDERBUFFER = 200,
 } rlFramebufferAttachTextureType;
 
-
 typedef enum {
     RL_CULL_FACE_FRONT = 0,
     RL_CULL_FACE_BACK
 } rlCullMode;
-
-
-
-
 
 #if defined(__cplusplus)
 extern "C" {
@@ -618,9 +443,6 @@ RLAPI void rlSetClipPlanes(double nearPlane, double farPlane);
 RLAPI double rlGetCullDistanceNear(void);
 RLAPI double rlGetCullDistanceFar(void);
 
-
-
-
 RLAPI void rlBegin(int mode);
 RLAPI void rlEnd(void);
 RLAPI void rlVertex2i(int x, int y);
@@ -631,13 +453,6 @@ RLAPI void rlNormal3f(float x, float y, float z);
 RLAPI void rlColor4ub(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
 RLAPI void rlColor3f(float x, float y, float z);
 RLAPI void rlColor4f(float x, float y, float z, float w);
-
-
-
-
-
-
-
 
 RLAPI bool rlEnableVertexArray(unsigned int vaoId);
 RLAPI void rlDisableVertexArray(void);
@@ -650,7 +465,6 @@ RLAPI void rlDisableVertexAttribute(unsigned int index);
 RLAPI void rlEnableStatePointer(int vertexAttribType, void *buffer);
 RLAPI void rlDisableStatePointer(int vertexAttribType);
 
-
 RLAPI void rlActiveTextureSlot(int slot);
 RLAPI void rlEnableTexture(unsigned int id);
 RLAPI void rlDisableTexture(void);
@@ -659,10 +473,8 @@ RLAPI void rlDisableTextureCubemap(void);
 RLAPI void rlTextureParameters(unsigned int id, int param, int value);
 RLAPI void rlCubemapParameters(unsigned int id, int param, int value);
 
-
 RLAPI void rlEnableShader(unsigned int id);
 RLAPI void rlDisableShader(void);
-
 
 RLAPI void rlEnableFramebuffer(unsigned int id);
 RLAPI void rlDisableFramebuffer(void);
@@ -670,7 +482,6 @@ RLAPI unsigned int rlGetActiveFramebuffer(void);
 RLAPI void rlActiveDrawBuffers(int count);
 RLAPI void rlBlitFramebuffer(int srcX, int srcY, int srcWidth, int srcHeight, int dstX, int dstY, int dstWidth, int dstHeight, int bufferMask);
 RLAPI void rlBindFramebuffer(unsigned int target, unsigned int framebuffer);
-
 
 RLAPI void rlEnableColorBlend(void);
 RLAPI void rlDisableColorBlend(void);
@@ -706,10 +517,6 @@ RLAPI void rlSetBlendMode(int mode);
 RLAPI void rlSetBlendFactors(int glSrcFactor, int glDstFactor, int glEquation);
 RLAPI void rlSetBlendFactorsSeparate(int glSrcRGB, int glDstRGB, int glSrcAlpha, int glDstAlpha, int glEqRGB, int glEqAlpha);
 
-
-
-
-
 RLAPI void rlglInit(int width, int height);
 RLAPI void rlglClose(void);
 RLAPI void rlLoadExtensions(void *loader);
@@ -724,9 +531,6 @@ RLAPI unsigned int rlGetTextureIdDefault(void);
 RLAPI unsigned int rlGetShaderIdDefault(void);
 RLAPI int *rlGetShaderLocsDefault(void);
 
-
-
-
 RLAPI rlRenderBatch rlLoadRenderBatch(int numBuffers, int bufferElements);
 RLAPI void rlUnloadRenderBatch(rlRenderBatch batch);
 RLAPI void rlDrawRenderBatch(rlRenderBatch *batch);
@@ -735,9 +539,6 @@ RLAPI void rlDrawRenderBatchActive(void);
 RLAPI bool rlCheckRenderBatchLimit(int vCount);
 
 RLAPI void rlSetTexture(unsigned int id);
-
-
-
 
 RLAPI unsigned int rlLoadVertexArray(void);
 RLAPI unsigned int rlLoadVertexBuffer(const void *buffer, int size, bool dynamic);
@@ -754,7 +555,6 @@ RLAPI void rlDrawVertexArrayElements(int offset, int count, const void *buffer);
 RLAPI void rlDrawVertexArrayInstanced(int offset, int count, int instances);
 RLAPI void rlDrawVertexArrayElementsInstanced(int offset, int count, const void *buffer, int instances);
 
-
 RLAPI unsigned int rlLoadTexture(const void *data, int width, int height, int format, int mipmapCount);
 RLAPI unsigned int rlLoadTextureDepth(int width, int height, bool useRenderBuffer);
 RLAPI unsigned int rlLoadTextureCubemap(const void *data, int size, int format, int mipmapCount);
@@ -766,7 +566,6 @@ RLAPI void rlGenTextureMipmaps(unsigned int id, int width, int height, int forma
 RLAPI void *rlReadTexturePixels(unsigned int id, int width, int height, int format);
 RLAPI unsigned char *rlReadScreenPixels(int width, int height);
 
-
 RLAPI unsigned int rlLoadFramebuffer(void);
 RLAPI void rlFramebufferAttach(unsigned int id, unsigned int texId, int attachType, int texType, int mipLevel);
 RLAPI bool rlFramebufferComplete(unsigned int id);
@@ -774,7 +573,6 @@ RLAPI void rlUnloadFramebuffer(unsigned int id);
 
 RLAPI void rlCopyFramebuffer(int x, int y, int width, int height, int format, void *pixels);
 RLAPI void rlResizeFramebuffer(int width, int height);
-
 
 RLAPI unsigned int rlLoadShader(const char *code, int type);
 RLAPI unsigned int rlLoadShaderProgram(const char *vsCode, const char *fsCode);
@@ -790,9 +588,7 @@ RLAPI void rlSetUniformMatrices(int locIndex, const Matrix *mat, int count);
 RLAPI void rlSetUniformSampler(int locIndex, unsigned int textureId);
 RLAPI void rlSetShader(unsigned int id, int *locs);
 
-
 RLAPI void rlComputeShaderDispatch(unsigned int groupX, unsigned int groupY, unsigned int groupZ);
-
 
 RLAPI unsigned int rlLoadShaderBuffer(unsigned int size, const void *data, int usageHint);
 RLAPI void rlUnloadShaderBuffer(unsigned int ssboId);
@@ -802,9 +598,7 @@ RLAPI void rlReadShaderBuffer(unsigned int id, void *dest, unsigned int count, u
 RLAPI void rlCopyShaderBuffer(unsigned int destId, unsigned int srcId, unsigned int destOffset, unsigned int srcOffset, unsigned int count);
 RLAPI unsigned int rlGetShaderBufferSize(unsigned int id);
 
-
 RLAPI void rlBindImageTexture(unsigned int id, unsigned int index, int format, bool readonly);
-
 
 RLAPI Matrix rlGetMatrixModelview(void);
 RLAPI Matrix rlGetMatrixProjection(void);
@@ -816,7 +610,6 @@ RLAPI void rlSetMatrixModelview(Matrix view);
 RLAPI void rlSetMatrixProjectionStereo(Matrix right, Matrix left);
 RLAPI void rlSetMatrixViewOffsetStereo(Matrix right, Matrix left);
 
-
 RLAPI void rlLoadDrawCube(void);
 RLAPI void rlLoadDrawQuad(void);
 
@@ -826,14 +619,7 @@ RLAPI void rlLoadDrawQuad(void);
 
 #endif
 
-
-
-
-
-
-
 #if defined(RLGL_IMPLEMENTATION)
-
 
 #if defined(BUILD_LIBTYPE_SHARED)
     #define GLAD_API_CALL_EXPORT
@@ -885,8 +671,6 @@ RLAPI void rlLoadDrawQuad(void);
     #include <GLES2/gl2ext.h>
 #elif defined(GRAPHICS_API_OPENGL_ES2)
 
-
-
     #if defined(PLATFORM_DESKTOP_GLFW) || defined(PLATFORM_DESKTOP_SDL)
         #define GLAD_GLES2_IMPLEMENTATION
         #include "external/glad_gles2.h"
@@ -896,9 +680,6 @@ RLAPI void rlLoadDrawQuad(void);
         #include <GLES2/gl2.h>
         #include <GLES2/gl2ext.h>
     #endif
-
-
-
 
     #if defined(PLATFORM_DRM)
     typedef void (GL_APIENTRYP PFNGLDRAWARRAYSINSTANCEDEXTPROC) (GLenum mode, GLint start, GLsizei count, GLsizei primcount);
@@ -911,9 +692,6 @@ RLAPI void rlLoadDrawQuad(void);
 #include <string.h>
 #include <math.h>
 #include <limits.h>
-
-
-
 
 #ifndef PI
     #define PI 3.14159265358979323846f
@@ -998,8 +776,6 @@ RLAPI void rlLoadDrawQuad(void);
     #endif
 #endif
 
-
-
 #define RL_DEFAULT_SHADER_ATTRIB_NAME_POSITION          "vertexPosition"
 #define RL_DEFAULT_SHADER_ATTRIB_NAME_TEXCOORD          "vertexTexCoord"
 #define RL_DEFAULT_SHADER_ATTRIB_NAME_NORMAL            "vertexNormal"
@@ -1021,9 +797,6 @@ RLAPI void rlLoadDrawQuad(void);
 #define RL_DEFAULT_SHADER_SAMPLER2D_NAME_TEXTURE0       "texture0"
 #define RL_DEFAULT_SHADER_SAMPLER2D_NAME_TEXTURE1       "texture1"
 #define RL_DEFAULT_SHADER_SAMPLER2D_NAME_TEXTURE2       "texture2"
-
-
-
 
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
 
@@ -1063,7 +836,6 @@ typedef struct rlglData {
         bool stereoRender;
         Matrix projectionStereo[2];
         Matrix viewOffsetStereo[2];
-
 
         int currentBlendMode;
         int glBlendSrcFactor;
@@ -1107,9 +879,6 @@ typedef struct rlglData {
 
 #endif
 
-
-
-
 static bool isGpuReady = false;
 static double rlCullDistanceNear = RL_CULL_DISTANCE_NEAR;
 static double rlCullDistanceFar = RL_CULL_DISTANCE_FAR;
@@ -1120,20 +889,14 @@ static rlglData RLGL = { 0 };
 
 #if defined(GRAPHICS_API_OPENGL_ES2) && !defined(GRAPHICS_API_OPENGL_ES3)
 
-
 static PFNGLGENVERTEXARRAYSOESPROC glGenVertexArrays = NULL;
 static PFNGLBINDVERTEXARRAYOESPROC glBindVertexArray = NULL;
 static PFNGLDELETEVERTEXARRAYSOESPROC glDeleteVertexArrays = NULL;
-
-
 
 static PFNGLDRAWARRAYSINSTANCEDEXTPROC glDrawArraysInstanced = NULL;
 static PFNGLDRAWELEMENTSINSTANCEDEXTPROC glDrawElementsInstanced = NULL;
 static PFNGLVERTEXATTRIBDIVISOREXTPROC glVertexAttribDivisor = NULL;
 #endif
-
-
-
 
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
 static void rlLoadShaderDefault(void);
@@ -1156,12 +919,7 @@ static Matrix rlMatrixTranspose(Matrix mat);
 static Matrix rlMatrixInvert(Matrix mat);
 #endif
 
-
-
-
-
 #if defined(GRAPHICS_API_OPENGL_11)
-
 
 void rlMatrixMode(int mode)
 {
@@ -1199,10 +957,8 @@ void rlMatrixMode(int mode)
     if (mode == RL_PROJECTION) RLGL.State.currentMatrix = &RLGL.State.projection;
     else if (mode == RL_MODELVIEW) RLGL.State.currentMatrix = &RLGL.State.modelview;
 
-
     RLGL.State.currentMatrixMode = mode;
 }
-
 
 void rlPushMatrix(void)
 {
@@ -1222,7 +978,6 @@ void rlPushMatrix(void)
     RLGL.State.stackCounter++;
 }
 
-
 void rlPopMatrix(void)
 {
     if (RLGL.State.stackCounter > 0)
@@ -1239,32 +994,25 @@ void rlPopMatrix(void)
     }
 }
 
-
 void rlLoadIdentity(void)
 {
     *RLGL.State.currentMatrix = rlMatrixIdentity();
 }
 
-
 void rlTranslatef(float x, float y, float z)
 {
     Matrix matTranslation = rlMatrixIdentity();
-
 
     matTranslation.m12 = x;
     matTranslation.m13 = y;
     matTranslation.m14 = z;
 
-
     *RLGL.State.currentMatrix = rlMatrixMultiply(matTranslation, *RLGL.State.currentMatrix);
 }
-
-
 
 void rlRotatef(float angle, float x, float y, float z)
 {
     Matrix matRotation = rlMatrixIdentity();
-
 
     float lengthSquared = x*x + y*y + z*z;
     if ((lengthSquared != 1.0f) && (lengthSquared != 0.0f))
@@ -1274,7 +1022,6 @@ void rlRotatef(float angle, float x, float y, float z)
         y *= inverseLength;
         z *= inverseLength;
     }
-
 
     float sinres = sinf(DEG2RAD*angle);
     float cosres = cosf(DEG2RAD*angle);
@@ -1300,28 +1047,22 @@ void rlRotatef(float angle, float x, float y, float z)
     matRotation.m14 = 0.0f;
     matRotation.m15 = 1.0f;
 
-
     *RLGL.State.currentMatrix = rlMatrixMultiply(matRotation, *RLGL.State.currentMatrix);
 }
-
 
 void rlScalef(float x, float y, float z)
 {
     Matrix matScale = rlMatrixIdentity();
 
-
     matScale.m0 = x;
     matScale.m5 = y;
     matScale.m10 = z;
 
-
     *RLGL.State.currentMatrix = rlMatrixMultiply(matScale, *RLGL.State.currentMatrix);
 }
 
-
 void rlMultMatrixf(const float *matf)
 {
-
 
     Matrix mat = { matf[0], matf[4], matf[8], matf[12],
                    matf[1], matf[5], matf[9], matf[13],
@@ -1330,7 +1071,6 @@ void rlMultMatrixf(const float *matf)
 
     *RLGL.State.currentMatrix = rlMatrixMultiply(mat, *RLGL.State.currentMatrix);
 }
-
 
 void rlFrustum(double left, double right, double bottom, double top, double znear, double zfar)
 {
@@ -1363,10 +1103,8 @@ void rlFrustum(double left, double right, double bottom, double top, double znea
     *RLGL.State.currentMatrix = rlMatrixMultiply(*RLGL.State.currentMatrix, matFrustum);
 }
 
-
 void rlOrtho(double left, double right, double bottom, double top, double znear, double zfar)
 {
-
 
     Matrix matOrtho = { 0 };
 
@@ -1395,12 +1133,10 @@ void rlOrtho(double left, double right, double bottom, double top, double znear,
 }
 #endif
 
-
 void rlViewport(int x, int y, int width, int height)
 {
     glViewport(x, y, width, height);
 }
-
 
 void rlSetClipPlanes(double nearPlane, double farPlane)
 {
@@ -1408,23 +1144,17 @@ void rlSetClipPlanes(double nearPlane, double farPlane)
     rlCullDistanceFar = farPlane;
 }
 
-
 double rlGetCullDistanceNear(void)
 {
     return rlCullDistanceNear;
 }
-
 
 double rlGetCullDistanceFar(void)
 {
     return rlCullDistanceFar;
 }
 
-
-
-
 #if defined(GRAPHICS_API_OPENGL_11)
-
 
 void rlBegin(int mode)
 {
@@ -1452,15 +1182,10 @@ void rlColor4f(float x, float y, float z, float w) { glColor4f(x, y, z, w); }
 void rlBegin(int mode)
 {
 
-
     if (RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].mode != mode)
     {
         if (RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].vertexCount > 0)
         {
-
-
-
-
 
             if (RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].mode == RL_LINES) RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].vertexAlignment = ((RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].vertexCount < 4)? RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].vertexCount : RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].vertexCount%4);
             else if (RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].mode == RL_TRIANGLES) RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].vertexAlignment = ((RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].vertexCount < 4)? 1 : (4 - (RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].vertexCount%4)));
@@ -1481,23 +1206,17 @@ void rlBegin(int mode)
     }
 }
 
-
 void rlEnd(void)
 {
 
-
-
     RLGL.currentBatch->currentDepth += (1.0f/20000.0f);
 }
-
-
 
 void rlVertex3f(float x, float y, float z)
 {
     float tx = x;
     float ty = y;
     float tz = z;
-
 
     if (RLGL.State.transformRequired)
     {
@@ -1506,16 +1225,11 @@ void rlVertex3f(float x, float y, float z)
         tz = RLGL.State.transform.m2*x + RLGL.State.transform.m6*y + RLGL.State.transform.m10*z + RLGL.State.transform.m14;
     }
 
-
-
-
     if (RLGL.State.vertexCounter > (RLGL.currentBatch->vertexBuffer[RLGL.currentBatch->currentBuffer].elementCount*4 - 4))
     {
         if ((RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].mode == RL_LINES) &&
             (RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].vertexCount%2 == 0))
         {
-
-
 
             rlCheckRenderBatchLimit(2 + 1);
         }
@@ -1531,20 +1245,16 @@ void rlVertex3f(float x, float y, float z)
         }
     }
 
-
     RLGL.currentBatch->vertexBuffer[RLGL.currentBatch->currentBuffer].vertices[3*RLGL.State.vertexCounter] = tx;
     RLGL.currentBatch->vertexBuffer[RLGL.currentBatch->currentBuffer].vertices[3*RLGL.State.vertexCounter + 1] = ty;
     RLGL.currentBatch->vertexBuffer[RLGL.currentBatch->currentBuffer].vertices[3*RLGL.State.vertexCounter + 2] = tz;
 
-
     RLGL.currentBatch->vertexBuffer[RLGL.currentBatch->currentBuffer].texcoords[2*RLGL.State.vertexCounter] = RLGL.State.texcoordx;
     RLGL.currentBatch->vertexBuffer[RLGL.currentBatch->currentBuffer].texcoords[2*RLGL.State.vertexCounter + 1] = RLGL.State.texcoordy;
-
 
     RLGL.currentBatch->vertexBuffer[RLGL.currentBatch->currentBuffer].normals[3*RLGL.State.vertexCounter] = RLGL.State.normalx;
     RLGL.currentBatch->vertexBuffer[RLGL.currentBatch->currentBuffer].normals[3*RLGL.State.vertexCounter + 1] = RLGL.State.normaly;
     RLGL.currentBatch->vertexBuffer[RLGL.currentBatch->currentBuffer].normals[3*RLGL.State.vertexCounter + 2] = RLGL.State.normalz;
-
 
     RLGL.currentBatch->vertexBuffer[RLGL.currentBatch->currentBuffer].colors[4*RLGL.State.vertexCounter] = RLGL.State.colorr;
     RLGL.currentBatch->vertexBuffer[RLGL.currentBatch->currentBuffer].colors[4*RLGL.State.vertexCounter + 1] = RLGL.State.colorg;
@@ -1555,27 +1265,21 @@ void rlVertex3f(float x, float y, float z)
     RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].vertexCount++;
 }
 
-
 void rlVertex2f(float x, float y)
 {
     rlVertex3f(x, y, RLGL.currentBatch->currentDepth);
 }
-
 
 void rlVertex2i(int x, int y)
 {
     rlVertex3f((float)x, (float)y, RLGL.currentBatch->currentDepth);
 }
 
-
-
 void rlTexCoord2f(float x, float y)
 {
     RLGL.State.texcoordx = x;
     RLGL.State.texcoordy = y;
 }
-
-
 
 void rlNormal3f(float x, float y, float z)
 {
@@ -1589,24 +1293,10 @@ void rlNormal3f(float x, float y, float z)
         normalz = RLGL.State.transform.m2*x + RLGL.State.transform.m6*y + RLGL.State.transform.m10*z;
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     RLGL.State.normalx = normalx;
     RLGL.State.normaly = normaly;
     RLGL.State.normalz = normalz;
 }
-
 
 void rlColor4ub(unsigned char x, unsigned char y, unsigned char z, unsigned char w)
 {
@@ -1616,12 +1306,10 @@ void rlColor4ub(unsigned char x, unsigned char y, unsigned char z, unsigned char
     RLGL.State.colora = w;
 }
 
-
 void rlColor4f(float r, float g, float b, float a)
 {
     rlColor4ub((unsigned char)(r*255), (unsigned char)(g*255), (unsigned char)(b*255), (unsigned char)(a*255));
 }
-
 
 void rlColor3f(float x, float y, float z)
 {
@@ -1629,11 +1317,6 @@ void rlColor3f(float x, float y, float z)
 }
 
 #endif
-
-
-
-
-
 
 void rlSetTexture(unsigned int id)
 {
@@ -1662,10 +1345,6 @@ void rlSetTexture(unsigned int id)
             if (RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].vertexCount > 0)
             {
 
-
-
-
-
                 if (RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].mode == RL_LINES) RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].vertexAlignment = ((RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].vertexCount < 4)? RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].vertexCount : RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].vertexCount%4);
                 else if (RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].mode == RL_TRIANGLES) RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].vertexAlignment = ((RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].vertexCount < 4)? 1 : (4 - (RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].vertexCount%4)));
                 else RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].vertexAlignment = 0;
@@ -1690,14 +1369,12 @@ void rlSetTexture(unsigned int id)
     }
 }
 
-
 void rlActiveTextureSlot(int slot)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     glActiveTexture(GL_TEXTURE0 + slot);
 #endif
 }
-
 
 void rlEnableTexture(unsigned int id)
 {
@@ -1707,7 +1384,6 @@ void rlEnableTexture(unsigned int id)
     glBindTexture(GL_TEXTURE_2D, id);
 }
 
-
 void rlDisableTexture(void)
 {
 #if defined(GRAPHICS_API_OPENGL_11)
@@ -1716,7 +1392,6 @@ void rlDisableTexture(void)
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-
 void rlEnableTextureCubemap(unsigned int id)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
@@ -1724,14 +1399,12 @@ void rlEnableTextureCubemap(unsigned int id)
 #endif
 }
 
-
 void rlDisableTextureCubemap(void)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 #endif
 }
-
 
 void rlTextureParameters(unsigned int id, int param, int value)
 {
@@ -1777,12 +1450,10 @@ void rlTextureParameters(unsigned int id, int param, int value)
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-
 void rlCubemapParameters(unsigned int id, int param, int value)
 {
 #if !defined(GRAPHICS_API_OPENGL_11)
     glBindTexture(GL_TEXTURE_CUBE_MAP, id);
-
 
     glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1.0f);
 
@@ -1820,14 +1491,12 @@ void rlCubemapParameters(unsigned int id, int param, int value)
 #endif
 }
 
-
 void rlEnableShader(unsigned int id)
 {
 #if (defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2))
     glUseProgram(id);
 #endif
 }
-
 
 void rlDisableShader(void)
 {
@@ -1836,14 +1505,12 @@ void rlDisableShader(void)
 #endif
 }
 
-
 void rlEnableFramebuffer(unsigned int id)
 {
 #if (defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2) || defined(GRAPHICS_API_OPENGL_SOFTWARE))
     glBindFramebuffer(GL_FRAMEBUFFER, id);
 #endif
 }
-
 
 unsigned int rlGetActiveFramebuffer(void)
 {
@@ -1854,14 +1521,12 @@ unsigned int rlGetActiveFramebuffer(void)
     return fboId;
 }
 
-
 void rlDisableFramebuffer(void)
 {
 #if (defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2) || defined(GRAPHICS_API_OPENGL_SOFTWARE))
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 #endif
 }
-
 
 void rlBlitFramebuffer(int srcX, int srcY, int srcWidth, int srcHeight, int dstX, int dstY, int dstWidth, int dstHeight, int bufferMask)
 {
@@ -1870,7 +1535,6 @@ void rlBlitFramebuffer(int srcX, int srcY, int srcWidth, int srcHeight, int dstX
 #endif
 }
 
-
 void rlBindFramebuffer(unsigned int target, unsigned int framebuffer)
 {
 #if (defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2) || defined(GRAPHICS_API_OPENGL_SOFTWARE))
@@ -1878,15 +1542,9 @@ void rlBindFramebuffer(unsigned int target, unsigned int framebuffer)
 #endif
 }
 
-
-
 void rlActiveDrawBuffers(int count)
 {
 #if (defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES3))
-
-
-
-
 
     if (count > 0)
     {
@@ -1911,37 +1569,23 @@ void rlActiveDrawBuffers(int count)
 #endif
 }
 
-
-
-
-
-
 void rlEnableColorBlend(void) { glEnable(GL_BLEND); }
-
 
 void rlDisableColorBlend(void) { glDisable(GL_BLEND); }
 
-
 void rlEnableDepthTest(void) { glEnable(GL_DEPTH_TEST); }
-
 
 void rlDisableDepthTest(void) { glDisable(GL_DEPTH_TEST); }
 
-
 void rlEnableDepthMask(void) { glDepthMask(GL_TRUE); }
-
 
 void rlDisableDepthMask(void) { glDepthMask(GL_FALSE); }
 
-
 void rlEnableBackfaceCulling(void) { glEnable(GL_CULL_FACE); }
-
 
 void rlDisableBackfaceCulling(void) { glDisable(GL_CULL_FACE); }
 
-
 void rlColorMask(bool r, bool g, bool b, bool a) { glColorMask(r, g, b, a); }
-
 
 void rlSetCullFace(int mode)
 {
@@ -1953,15 +1597,11 @@ void rlSetCullFace(int mode)
     }
 }
 
-
 void rlEnableScissorTest(void) { glEnable(GL_SCISSOR_TEST); }
-
 
 void rlDisableScissorTest(void) { glDisable(GL_SCISSOR_TEST); }
 
-
 void rlScissor(int x, int y, int width, int height) { glScissor(x, y, width, height); }
-
 
 void rlEnableWireMode(void)
 {
@@ -1971,7 +1611,6 @@ void rlEnableWireMode(void)
 #endif
 }
 
-
 void rlDisableWireMode(void)
 {
 #if defined(GRAPHICS_API_OPENGL_11) || defined(GRAPHICS_API_OPENGL_33)
@@ -1979,7 +1618,6 @@ void rlDisableWireMode(void)
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 #endif
 }
-
 
 void rlEnablePointMode(void)
 {
@@ -1990,7 +1628,6 @@ void rlEnablePointMode(void)
 #endif
 }
 
-
 void rlDisablePointMode(void)
 {
 #if defined(GRAPHICS_API_OPENGL_11) || defined(GRAPHICS_API_OPENGL_33)
@@ -1999,9 +1636,7 @@ void rlDisablePointMode(void)
 #endif
 }
 
-
 void rlSetLineWidth(float width) { glLineWidth(width); }
-
 
 float rlGetLineWidth(void)
 {
@@ -2010,14 +1645,12 @@ float rlGetLineWidth(void)
     return width;
 }
 
-
 void rlSetPointSize(float size)
 {
 #if defined(GRAPHICS_API_OPENGL_11)
     glPointSize(size);
 #endif
 }
-
 
 float rlGetPointSize(void)
 {
@@ -2029,14 +1662,12 @@ float rlGetPointSize(void)
 
 }
 
-
 void rlEnableSmoothLines(void)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_11)
     glEnable(GL_LINE_SMOOTH);
 #endif
 }
-
 
 void rlDisableSmoothLines(void)
 {
@@ -2045,7 +1676,6 @@ void rlDisableSmoothLines(void)
 #endif
 }
 
-
 void rlEnableStereoRender(void)
 {
 #if (defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2))
@@ -2053,14 +1683,12 @@ void rlEnableStereoRender(void)
 #endif
 }
 
-
 void rlDisableStereoRender(void)
 {
 #if (defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2))
     RLGL.State.stereoRender = false;
 #endif
 }
-
 
 bool rlIsStereoRenderEnabled(void)
 {
@@ -2070,7 +1698,6 @@ bool rlIsStereoRenderEnabled(void)
     return false;
 #endif
 }
-
 
 void rlClearColor(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
 {
@@ -2083,13 +1710,11 @@ void rlClearColor(unsigned char r, unsigned char g, unsigned char b, unsigned ch
     glClearColor(cr, cg, cb, ca);
 }
 
-
 void rlClearScreenBuffers(void)
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 }
-
 
 void rlCheckErrors(void)
 {
@@ -2113,7 +1738,6 @@ void rlCheckErrors(void)
     }
 #endif
 }
-
 
 void rlSetBlendMode(int mode)
 {
@@ -2150,7 +1774,6 @@ void rlSetBlendMode(int mode)
 #endif
 }
 
-
 void rlSetBlendFactors(int glSrcFactor, int glDstFactor, int glEquation)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
@@ -2166,7 +1789,6 @@ void rlSetBlendFactors(int glSrcFactor, int glDstFactor, int glEquation)
     }
 #endif
 }
-
 
 void rlSetBlendFactorsSeparate(int glSrcRGB, int glDstRGB, int glSrcAlpha, int glDstAlpha, int glEqRGB, int glEqAlpha)
 {
@@ -2190,19 +1812,9 @@ void rlSetBlendFactorsSeparate(int glSrcRGB, int glDstRGB, int glSrcAlpha, int g
 #endif
 }
 
-
-
-
 #if defined(GRAPHICS_API_OPENGL_43) && RLGL_ENABLE_OPENGL_DEBUG_CONTEXT
 static void GLAPIENTRY rlDebugMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam)
 {
-
-
-
-
-
-
-
 
     if ((id == 131169) || (id == 131185) || (id == 131218) || (id == 131204)) return;
 
@@ -2250,24 +1862,14 @@ static void GLAPIENTRY rlDebugMessageCallback(GLenum source, GLenum type, GLuint
 }
 #endif
 
-
-
-
-
-
 void rlglInit(int width, int height)
 {
     isGpuReady = true;
-
 
 #if defined(GRAPHICS_API_OPENGL_43) && RLGL_ENABLE_OPENGL_DEBUG_CONTEXT
     if ((glDebugMessageCallback != NULL) && (glDebugMessageControl != NULL))
     {
         glDebugMessageCallback(rlDebugMessageCallback, 0);
-
-
-
-
 
         glEnable(GL_DEBUG_OUTPUT);
         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -2283,22 +1885,16 @@ void rlglInit(int width, int height)
     if (RLGL.State.defaultTextureId != 0) TRACELOG(RL_LOG_INFO, "TEXTURE: [ID %i] Default texture loaded successfully", RLGL.State.defaultTextureId);
     else TRACELOG(RL_LOG_WARNING, "TEXTURE: Failed to load default texture");
 
-
-
     rlLoadShaderDefault();
     RLGL.State.currentShaderId = RLGL.State.defaultShaderId;
     RLGL.State.currentShaderLocs = RLGL.State.defaultShaderLocs;
-
-
 
     RLGL.State.currentShaderLocs[RL_SHADER_LOC_VERTEX_NORMAL] = RL_DEFAULT_SHADER_ATTRIB_LOCATION_NORMAL;
     RLGL.defaultBatch = rlLoadRenderBatch(RL_DEFAULT_BATCH_BUFFERS, RL_DEFAULT_BATCH_BUFFER_ELEMENTS);
     RLGL.State.currentShaderLocs[RL_SHADER_LOC_VERTEX_NORMAL] = -1;
     RLGL.currentBatch = &RLGL.defaultBatch;
 
-
     for (int i = 0; i < RL_MAX_MATRIX_STACK_SIZE; i++) RLGL.State.stack[i] = rlMatrixIdentity();
-
 
     RLGL.State.transform = rlMatrixIdentity();
     RLGL.State.projection = rlMatrixIdentity();
@@ -2316,17 +1912,11 @@ void rlglInit(int width, int height)
     }
 #endif
 
-
-
-
     glDepthFunc(GL_LEQUAL);
     glDisable(GL_DEPTH_TEST);
 
-
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
-
-
 
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
@@ -2347,7 +1937,6 @@ void rlglInit(int width, int height)
     RLGL.State.framebufferHeight = height;
 #endif
 
-
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClearDepth(1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -2355,7 +1944,6 @@ void rlglInit(int width, int height)
     TRACELOG(RL_LOG_INFO, "RLGL: Default OpenGL state initialized successfully");
 
 }
-
 
 void rlglClose(void)
 {
@@ -2374,8 +1962,6 @@ void rlglClose(void)
     isGpuReady = false;
 }
 
-
-
 void rlLoadExtensions(void *loader)
 {
 #if defined(GRAPHICS_API_OPENGL_33)
@@ -2383,20 +1969,17 @@ void rlLoadExtensions(void *loader)
     if (gladLoadGL((GLADloadfunc)loader) == 0) TRACELOG(RL_LOG_WARNING, "GLAD: Cannot load OpenGL extensions");
     else TRACELOG(RL_LOG_INFO, "GLAD: OpenGL extensions loaded successfully");
 
-
     GLint numExt = 0;
     glGetIntegerv(GL_NUM_EXTENSIONS, &numExt);
     TRACELOG(RL_LOG_INFO, "GL: Supported extensions count: %i", numExt);
 
 #if RLGL_SHOW_GL_DETAILS_INFO
 
-
     TRACELOG(RL_LOG_INFO, "GL: OpenGL extensions:");
     for (int i = 0; i < numExt; i++) TRACELOG(RL_LOG_INFO, "    %s", glGetStringi(GL_EXTENSIONS, i));
 #endif
 
 #if defined(GRAPHICS_API_OPENGL_21)
-
 
     RLGL.ExtSupported.vao = GLAD_GL_ARB_vertex_array_object;
     RLGL.ExtSupported.instancing = (GLAD_GL_EXT_draw_instanced && GLAD_GL_ARB_instanced_arrays);
@@ -2409,7 +1992,6 @@ void rlLoadExtensions(void *loader)
     RLGL.ExtSupported.texMirrorClamp = GLAD_GL_EXT_texture_mirror_clamp;
 #else
 
-
     RLGL.ExtSupported.vao = true;
     RLGL.ExtSupported.instancing = true;
     RLGL.ExtSupported.texNPOT = true;
@@ -2420,7 +2002,6 @@ void rlLoadExtensions(void *loader)
     RLGL.ExtSupported.texAnisoFilter = true;
     RLGL.ExtSupported.texMirrorClamp = true;
 #endif
-
 
     RLGL.ExtSupported.texCompASTC = GLAD_GL_KHR_texture_compression_astc_hdr && GLAD_GL_KHR_texture_compression_astc_ldr;
     RLGL.ExtSupported.texCompDXT = GLAD_GL_EXT_texture_compression_s3tc;
@@ -2434,7 +2015,6 @@ void rlLoadExtensions(void *loader)
 
 #if defined(GRAPHICS_API_OPENGL_ES3)
 
-
     RLGL.ExtSupported.vao = true;
     RLGL.ExtSupported.instancing = true;
     RLGL.ExtSupported.texNPOT = true;
@@ -2446,15 +2026,6 @@ void rlLoadExtensions(void *loader)
     RLGL.ExtSupported.texAnisoFilter = true;
     RLGL.ExtSupported.texMirrorClamp = true;
 
-
-
-
-
-
-
-
-
-
 #elif defined(GRAPHICS_API_OPENGL_ES2)
 
     #if defined(PLATFORM_DESKTOP_GLFW) || defined(PLATFORM_DESKTOP_SDL)
@@ -2463,11 +2034,9 @@ void rlLoadExtensions(void *loader)
     else TRACELOG(RL_LOG_INFO, "GLAD: OpenGL ES 2.0 loaded successfully");
     #endif
 
-
     GLint numExt = 0;
     const char **extList = (const char **)RL_CALLOC(512, sizeof(const char *));
     const char *extensions = (const char *)glGetString(GL_EXTENSIONS);
-
 
     int extensionsLength = (int)strlen(extensions);
     char *extensionsDup = (char *)RL_CALLOC(extensionsLength + 1, sizeof(char));
@@ -2491,23 +2060,18 @@ void rlLoadExtensions(void *loader)
     for (int i = 0; i < numExt; i++) TRACELOG(RL_LOG_INFO, "    %s", extList[i]);
 #endif
 
-
     for (int i = 0; i < numExt; i++)
     {
 
-
         if (strcmp(extList[i], (const char *)"GL_OES_vertex_array_object") == 0)
         {
-
 
             glGenVertexArrays = (PFNGLGENVERTEXARRAYSOESPROC)((rlglLoadProc)loader)("glGenVertexArraysOES");
             glBindVertexArray = (PFNGLBINDVERTEXARRAYOESPROC)((rlglLoadProc)loader)("glBindVertexArrayOES");
             glDeleteVertexArrays = (PFNGLDELETEVERTEXARRAYSOESPROC)((rlglLoadProc)loader)("glDeleteVertexArraysOES");
 
-
             if ((glGenVertexArrays != NULL) && (glBindVertexArray != NULL) && (glDeleteVertexArrays != NULL)) RLGL.ExtSupported.vao = true;
         }
-
 
         if (strstr(extList[i], (const char *)"instanced_arrays") != NULL)
         {
@@ -2531,7 +2095,6 @@ void rlLoadExtensions(void *loader)
                 glVertexAttribDivisor = (PFNGLVERTEXATTRIBDIVISOREXTPROC)((rlglLoadProc)loader)("glVertexAttribDivisorNV");
             }
 
-
             if ((glDrawArraysInstanced != NULL) && (glDrawElementsInstanced != NULL) && (glVertexAttribDivisor != NULL)) RLGL.ExtSupported.instancing = true;
         }
         else if (strstr(extList[i], (const char *)"draw_instanced") != NULL)
@@ -2548,18 +2111,13 @@ void rlLoadExtensions(void *loader)
                 glDrawElementsInstanced = (PFNGLDRAWELEMENTSINSTANCEDEXTPROC)((rlglLoadProc)loader)("glDrawElementsInstancedNV");
             }
 
-
             if ((glDrawArraysInstanced != NULL) && (glDrawElementsInstanced != NULL) && (glVertexAttribDivisor != NULL)) RLGL.ExtSupported.instancing = true;
         }
 
-
-
         if (strcmp(extList[i], (const char *)"GL_OES_texture_npot") == 0) RLGL.ExtSupported.texNPOT = true;
-
 
         if (strcmp(extList[i], (const char *)"GL_OES_texture_float") == 0) RLGL.ExtSupported.texFloat32 = true;
         if (strcmp(extList[i], (const char *)"GL_OES_texture_half_float") == 0) RLGL.ExtSupported.texFloat16 = true;
-
 
         if (strcmp(extList[i], (const char *)"GL_OES_depth_texture") == 0) RLGL.ExtSupported.texDepth = true;
         if (strcmp(extList[i], (const char *)"GL_WEBGL_depth_texture") == 0) RLGL.ExtSupported.texDepthWebGL = true;
@@ -2568,38 +2126,27 @@ void rlLoadExtensions(void *loader)
         if (strcmp(extList[i], (const char *)"GL_OES_depth24") == 0) RLGL.ExtSupported.maxDepthBits = 24;
         if (strcmp(extList[i], (const char *)"GL_OES_depth32") == 0) RLGL.ExtSupported.maxDepthBits = 32;
 
-
         if ((strcmp(extList[i], (const char *)"GL_EXT_texture_compression_s3tc") == 0) ||
             (strcmp(extList[i], (const char *)"GL_WEBGL_compressed_texture_s3tc") == 0) ||
             (strcmp(extList[i], (const char *)"GL_WEBKIT_WEBGL_compressed_texture_s3tc") == 0)) RLGL.ExtSupported.texCompDXT = true;
 
-
         if ((strcmp(extList[i], (const char *)"GL_OES_compressed_ETC1_RGB8_texture") == 0) ||
             (strcmp(extList[i], (const char *)"GL_WEBGL_compressed_texture_etc1") == 0)) RLGL.ExtSupported.texCompETC1 = true;
 
-
         if (strcmp(extList[i], (const char *)"GL_ARB_ES3_compatibility") == 0) RLGL.ExtSupported.texCompETC2 = true;
-
 
         if (strcmp(extList[i], (const char *)"GL_IMG_texture_compression_pvrtc") == 0) RLGL.ExtSupported.texCompPVRT = true;
 
-
         if (strcmp(extList[i], (const char *)"GL_KHR_texture_compression_astc_hdr") == 0) RLGL.ExtSupported.texCompASTC = true;
 
-
         if (strcmp(extList[i], (const char *)"GL_EXT_texture_filter_anisotropic") == 0) RLGL.ExtSupported.texAnisoFilter = true;
-
 
         if (strcmp(extList[i], (const char *)"GL_EXT_texture_mirror_clamp") == 0) RLGL.ExtSupported.texMirrorClamp = true;
     }
 
-
     RL_FREE(extList);
     RL_FREE(extensionsDup);
 #endif
-
-
-
 
     TRACELOG(RL_LOG_INFO, "GL: OpenGL device information:");
     TRACELOG(RL_LOG_INFO, "    > Vendor:   %s", glGetString(GL_VENDOR));
@@ -2609,7 +2156,6 @@ void rlLoadExtensions(void *loader)
 
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     RLGL.loader = (rlglLoadProc)loader;
-
 
     #ifndef GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT
         #define GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT 0x84FF
@@ -2651,7 +2197,6 @@ void rlLoadExtensions(void *loader)
 
 #else
 
-
     if (RLGL.ExtSupported.vao) TRACELOG(RL_LOG_INFO, "GL: VAO extension detected, VAO functions loaded successfully");
     else TRACELOG(RL_LOG_WARNING, "GL: VAO extension not found, VAO not supported");
     if (RLGL.ExtSupported.texNPOT) TRACELOG(RL_LOG_INFO, "GL: NPOT textures extension detected, full NPOT textures supported");
@@ -2668,7 +2213,6 @@ void rlLoadExtensions(void *loader)
 #endif
 }
 
-
 void *rlGetProcAddress(const char *procName)
 {
     void *func = NULL;
@@ -2677,7 +2221,6 @@ void *rlGetProcAddress(const char *procName)
 #endif
     return func;
 }
-
 
 int rlGetVersion(void)
 {
@@ -2704,7 +2247,6 @@ int rlGetVersion(void)
     return glVersion;
 }
 
-
 void rlSetFramebufferWidth(int width)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
@@ -2712,14 +2254,12 @@ void rlSetFramebufferWidth(int width)
 #endif
 }
 
-
 void rlSetFramebufferHeight(int height)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     RLGL.State.framebufferHeight = height;
 #endif
 }
-
 
 int rlGetFramebufferWidth(void)
 {
@@ -2730,7 +2270,6 @@ int rlGetFramebufferWidth(void)
     return width;
 }
 
-
 int rlGetFramebufferHeight(void)
 {
     int height = 0;
@@ -2739,8 +2278,6 @@ int rlGetFramebufferHeight(void)
 #endif
     return height;
 }
-
-
 
 unsigned int rlGetTextureIdDefault(void)
 {
@@ -2751,7 +2288,6 @@ unsigned int rlGetTextureIdDefault(void)
     return id;
 }
 
-
 unsigned int rlGetShaderIdDefault(void)
 {
     unsigned int id = 0;
@@ -2760,7 +2296,6 @@ unsigned int rlGetShaderIdDefault(void)
 #endif
     return id;
 }
-
 
 int *rlGetShaderLocsDefault(void)
 {
@@ -2771,16 +2306,12 @@ int *rlGetShaderLocsDefault(void)
     return locs;
 }
 
-
-
-
 rlRenderBatch rlLoadRenderBatch(int numBuffers, int bufferElements)
 {
     rlRenderBatch batch = { 0 };
     if (!isGpuReady) { TRACELOG(RL_LOG_WARNING, "GL: GPU is not ready to load data, trying to load before InitWindow()?"); return batch; }
 
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
-
 
     batch.vertexBuffer = (rlVertexBuffer *)RL_CALLOC(numBuffers, sizeof(rlVertexBuffer));
 
@@ -2806,7 +2337,6 @@ rlRenderBatch rlLoadRenderBatch(int numBuffers, int bufferElements)
 
         int k = 0;
 
-
         for (int j = 0; j < (6*bufferElements); j += 6)
         {
             batch.vertexBuffer[i].indices[j] = 4*k;
@@ -2824,9 +2354,6 @@ rlRenderBatch rlLoadRenderBatch(int numBuffers, int bufferElements)
 
     TRACELOG(RL_LOG_INFO, "RLGL: Render batch vertex buffers loaded successfully in RAM (CPU)");
 
-
-
-
     for (int i = 0; i < numBuffers; i++)
     {
         if (RLGL.ExtSupported.vao)
@@ -2836,14 +2363,11 @@ rlRenderBatch rlLoadRenderBatch(int numBuffers, int bufferElements)
             glBindVertexArray(batch.vertexBuffer[i].vaoId);
         }
 
-
-
         glGenBuffers(1, &batch.vertexBuffer[i].vboId[0]);
         glBindBuffer(GL_ARRAY_BUFFER, batch.vertexBuffer[i].vboId[0]);
         glBufferData(GL_ARRAY_BUFFER, bufferElements*3*4*sizeof(float), batch.vertexBuffer[i].vertices, GL_DYNAMIC_DRAW);
         glEnableVertexAttribArray(RLGL.State.currentShaderLocs[RL_SHADER_LOC_VERTEX_POSITION]);
         glVertexAttribPointer(RLGL.State.currentShaderLocs[RL_SHADER_LOC_VERTEX_POSITION], 3, GL_FLOAT, 0, 0, 0);
-
 
         glGenBuffers(1, &batch.vertexBuffer[i].vboId[1]);
         glBindBuffer(GL_ARRAY_BUFFER, batch.vertexBuffer[i].vboId[1]);
@@ -2851,20 +2375,17 @@ rlRenderBatch rlLoadRenderBatch(int numBuffers, int bufferElements)
         glEnableVertexAttribArray(RLGL.State.currentShaderLocs[RL_SHADER_LOC_VERTEX_TEXCOORD01]);
         glVertexAttribPointer(RLGL.State.currentShaderLocs[RL_SHADER_LOC_VERTEX_TEXCOORD01], 2, GL_FLOAT, 0, 0, 0);
 
-
         glGenBuffers(1, &batch.vertexBuffer[i].vboId[2]);
         glBindBuffer(GL_ARRAY_BUFFER, batch.vertexBuffer[i].vboId[2]);
         glBufferData(GL_ARRAY_BUFFER, bufferElements*3*4*sizeof(float), batch.vertexBuffer[i].normals, GL_DYNAMIC_DRAW);
         glEnableVertexAttribArray(RLGL.State.currentShaderLocs[RL_SHADER_LOC_VERTEX_NORMAL]);
         glVertexAttribPointer(RLGL.State.currentShaderLocs[RL_SHADER_LOC_VERTEX_NORMAL], 3, GL_FLOAT, 0, 0, 0);
 
-
         glGenBuffers(1, &batch.vertexBuffer[i].vboId[3]);
         glBindBuffer(GL_ARRAY_BUFFER, batch.vertexBuffer[i].vboId[3]);
         glBufferData(GL_ARRAY_BUFFER, bufferElements*4*4*sizeof(unsigned char), batch.vertexBuffer[i].colors, GL_DYNAMIC_DRAW);
         glEnableVertexAttribArray(RLGL.State.currentShaderLocs[RL_SHADER_LOC_VERTEX_COLOR]);
         glVertexAttribPointer(RLGL.State.currentShaderLocs[RL_SHADER_LOC_VERTEX_COLOR], 4, GL_UNSIGNED_BYTE, GL_TRUE, 0, 0);
-
 
         glGenBuffers(1, &batch.vertexBuffer[i].vboId[4]);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, batch.vertexBuffer[i].vboId[4]);
@@ -2878,11 +2399,7 @@ rlRenderBatch rlLoadRenderBatch(int numBuffers, int bufferElements)
 
     TRACELOG(RL_LOG_INFO, "RLGL: Render batch vertex buffers loaded successfully in VRAM (GPU)");
 
-
     if (RLGL.ExtSupported.vao) glBindVertexArray(0);
-
-
-
 
     batch.draws = (rlDrawCall *)RL_CALLOC(RL_DEFAULT_BATCH_DRAWCALLS, sizeof(rlDrawCall));
 
@@ -2892,9 +2409,7 @@ rlRenderBatch rlLoadRenderBatch(int numBuffers, int bufferElements)
         batch.draws[i].vertexCount = 0;
         batch.draws[i].vertexAlignment = 0;
 
-
         batch.draws[i].textureId = RLGL.State.defaultTextureId;
-
 
     }
 
@@ -2907,14 +2422,12 @@ rlRenderBatch rlLoadRenderBatch(int numBuffers, int bufferElements)
     return batch;
 }
 
-
 void rlUnloadRenderBatch(rlRenderBatch batch)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
 
     for (int i = 0; i < batch.bufferCount; i++)
     {
@@ -2929,16 +2442,13 @@ void rlUnloadRenderBatch(rlRenderBatch batch)
             glBindVertexArray(0);
         }
 
-
         glDeleteBuffers(1, &batch.vertexBuffer[i].vboId[0]);
         glDeleteBuffers(1, &batch.vertexBuffer[i].vboId[1]);
         glDeleteBuffers(1, &batch.vertexBuffer[i].vboId[2]);
         glDeleteBuffers(1, &batch.vertexBuffer[i].vboId[3]);
         glDeleteBuffers(1, &batch.vertexBuffer[i].vboId[4]);
 
-
         if (RLGL.ExtSupported.vao) glDeleteVertexArrays(1, &batch.vertexBuffer[i].vaoId);
-
 
         RL_FREE(batch.vertexBuffer[i].vertices);
         RL_FREE(batch.vertexBuffer[i].texcoords);
@@ -2947,69 +2457,34 @@ void rlUnloadRenderBatch(rlRenderBatch batch)
         RL_FREE(batch.vertexBuffer[i].indices);
     }
 
-
     RL_FREE(batch.vertexBuffer);
     RL_FREE(batch.draws);
 #endif
 }
 
-
-
 void rlDrawRenderBatch(rlRenderBatch *batch)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
-
-
 
     if (RLGL.State.vertexCounter > 0)
     {
 
         if (RLGL.ExtSupported.vao) glBindVertexArray(batch->vertexBuffer[batch->currentBuffer].vaoId);
 
-
-
-
-
-
         glBindBuffer(GL_ARRAY_BUFFER, batch->vertexBuffer[batch->currentBuffer].vboId[0]);
         glBufferSubData(GL_ARRAY_BUFFER, 0, RLGL.State.vertexCounter*3*sizeof(float), batch->vertexBuffer[batch->currentBuffer].vertices);
-
-
 
         glBindBuffer(GL_ARRAY_BUFFER, batch->vertexBuffer[batch->currentBuffer].vboId[1]);
         glBufferSubData(GL_ARRAY_BUFFER, 0, RLGL.State.vertexCounter*2*sizeof(float), batch->vertexBuffer[batch->currentBuffer].texcoords);
 
-
-
         glBindBuffer(GL_ARRAY_BUFFER, batch->vertexBuffer[batch->currentBuffer].vboId[2]);
         glBufferSubData(GL_ARRAY_BUFFER, 0, RLGL.State.vertexCounter*3*sizeof(float), batch->vertexBuffer[batch->currentBuffer].normals);
-
-
 
         glBindBuffer(GL_ARRAY_BUFFER, batch->vertexBuffer[batch->currentBuffer].vboId[3]);
         glBufferSubData(GL_ARRAY_BUFFER, 0, RLGL.State.vertexCounter*4*sizeof(unsigned char), batch->vertexBuffer[batch->currentBuffer].colors);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         if (RLGL.ExtSupported.vao) glBindVertexArray(0);
     }
-
-
-
 
     Matrix matProjection = RLGL.State.projection;
     Matrix matModelView = RLGL.State.modelview;
@@ -3024,18 +2499,15 @@ void rlDrawRenderBatch(rlRenderBatch *batch)
 
             rlViewport(eye*RLGL.State.framebufferWidth/2, 0, RLGL.State.framebufferWidth/2, RLGL.State.framebufferHeight);
 
-
             rlSetMatrixModelview(rlMatrixMultiply(matModelView, RLGL.State.viewOffsetStereo[eye]));
 
             rlSetMatrixProjection(RLGL.State.projectionStereo[eye]);
         }
 
-
         if (RLGL.State.vertexCounter > 0)
         {
 
             glUseProgram(RLGL.State.currentShaderId);
-
 
             Matrix matMVP = rlMatrixMultiply(RLGL.State.modelview, RLGL.State.projection);
             glUniformMatrix4fv(RLGL.State.currentShaderLocs[RL_SHADER_LOC_MATRIX_MVP], 1, false, rlMatrixToFloat(matMVP));
@@ -3044,9 +2516,6 @@ void rlDrawRenderBatch(rlRenderBatch *batch)
             {
                 glUniformMatrix4fv(RLGL.State.currentShaderLocs[RL_SHADER_LOC_MATRIX_PROJECTION], 1, false, rlMatrixToFloat(RLGL.State.projection));
             }
-
-
-
 
             if (RLGL.State.currentShaderLocs[RL_SHADER_LOC_MATRIX_VIEW] != -1)
             {
@@ -3071,16 +2540,13 @@ void rlDrawRenderBatch(rlRenderBatch *batch)
                 glVertexAttribPointer(RLGL.State.currentShaderLocs[RL_SHADER_LOC_VERTEX_POSITION], 3, GL_FLOAT, 0, 0, 0);
                 glEnableVertexAttribArray(RLGL.State.currentShaderLocs[RL_SHADER_LOC_VERTEX_POSITION]);
 
-
                 glBindBuffer(GL_ARRAY_BUFFER, batch->vertexBuffer[batch->currentBuffer].vboId[1]);
                 glVertexAttribPointer(RLGL.State.currentShaderLocs[RL_SHADER_LOC_VERTEX_TEXCOORD01], 2, GL_FLOAT, 0, 0, 0);
                 glEnableVertexAttribArray(RLGL.State.currentShaderLocs[RL_SHADER_LOC_VERTEX_TEXCOORD01]);
 
-
                 glBindBuffer(GL_ARRAY_BUFFER, batch->vertexBuffer[batch->currentBuffer].vboId[2]);
                 glVertexAttribPointer(RLGL.State.currentShaderLocs[RL_SHADER_LOC_VERTEX_NORMAL], 3, GL_FLOAT, 0, 0, 0);
                 glEnableVertexAttribArray(RLGL.State.currentShaderLocs[RL_SHADER_LOC_VERTEX_NORMAL]);
-
 
                 glBindBuffer(GL_ARRAY_BUFFER, batch->vertexBuffer[batch->currentBuffer].vboId[3]);
                 glVertexAttribPointer(RLGL.State.currentShaderLocs[RL_SHADER_LOC_VERTEX_COLOR], 4, GL_UNSIGNED_BYTE, GL_TRUE, 0, 0);
@@ -3089,11 +2555,8 @@ void rlDrawRenderBatch(rlRenderBatch *batch)
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, batch->vertexBuffer[batch->currentBuffer].vboId[4]);
             }
 
-
             glUniform4f(RLGL.State.currentShaderLocs[RL_SHADER_LOC_COLOR_DIFFUSE], 1.0f, 1.0f, 1.0f, 1.0f);
             glUniform1i(RLGL.State.currentShaderLocs[RL_SHADER_LOC_MAP_DIFFUSE], 0);
-
-
 
             for (int i = 0; i < RL_DEFAULT_BATCH_MAX_TEXTURE_UNITS; i++)
             {
@@ -3103,8 +2566,6 @@ void rlDrawRenderBatch(rlRenderBatch *batch)
                     glBindTexture(GL_TEXTURE_2D, RLGL.State.activeTextureId[i]);
                 }
             }
-
-
 
             glActiveTexture(GL_TEXTURE0);
 
@@ -3117,8 +2578,6 @@ void rlDrawRenderBatch(rlRenderBatch *batch)
                 else
                 {
     #if defined(GRAPHICS_API_OPENGL_33)
-
-
 
                     glDrawElements(GL_TRIANGLES, batch->draws[i].vertexCount/4*6, GL_UNSIGNED_INT, (GLvoid *)(vertexOffset/4*6*sizeof(GLuint)));
     #endif
@@ -3144,22 +2603,14 @@ void rlDrawRenderBatch(rlRenderBatch *batch)
         glUseProgram(0);
     }
 
-
     if (eyeCount == 2) rlViewport(0, 0, RLGL.State.framebufferWidth, RLGL.State.framebufferHeight);
-
-
-
-
 
     RLGL.State.vertexCounter = 0;
 
-
     batch->currentDepth = -1.0f;
-
 
     RLGL.State.projection = matProjection;
     RLGL.State.modelview = matModelView;
-
 
     for (int i = 0; i < RL_DEFAULT_BATCH_DRAWCALLS; i++)
     {
@@ -3168,19 +2619,14 @@ void rlDrawRenderBatch(rlRenderBatch *batch)
         batch->draws[i].textureId = RLGL.State.defaultTextureId;
     }
 
-
     for (int i = 0; i < RL_DEFAULT_BATCH_MAX_TEXTURE_UNITS; i++) RLGL.State.activeTextureId[i] = 0;
 
-
     batch->drawCounter = 1;
-
-
 
     batch->currentBuffer++;
     if (batch->currentBuffer >= batch->bufferCount) batch->currentBuffer = 0;
 #endif
 }
-
 
 void rlSetRenderBatchActive(rlRenderBatch *batch)
 {
@@ -3192,15 +2638,12 @@ void rlSetRenderBatchActive(rlRenderBatch *batch)
 #endif
 }
 
-
 void rlDrawRenderBatchActive(void)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     rlDrawRenderBatch(RLGL.currentBatch);
 #endif
 }
-
-
 
 bool rlCheckRenderBatchLimit(int vCount)
 {
@@ -3212,12 +2655,10 @@ bool rlCheckRenderBatchLimit(int vCount)
     {
         overflow = true;
 
-
         int currentMode = RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].mode;
         int currentTexture = RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].textureId;
 
         rlDrawRenderBatch(RLGL.currentBatch);
-
 
         RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].mode = currentMode;
         RLGL.currentBatch->draws[RLGL.currentBatch->drawCounter - 1].textureId = currentTexture;
@@ -3227,16 +2668,12 @@ bool rlCheckRenderBatchLimit(int vCount)
     return overflow;
 }
 
-
-
-
 unsigned int rlLoadTexture(const void *data, int width, int height, int format, int mipmapCount)
 {
     unsigned int id = 0;
     if (!isGpuReady) { TRACELOG(RL_LOG_WARNING, "GL: GPU is not ready to load data, trying to load before InitWindow()?"); return id; }
 
     glBindTexture(GL_TEXTURE_2D, 0);
-
 
 #if defined(GRAPHICS_API_OPENGL_11)
     if (format >= RL_PIXELFORMAT_COMPRESSED_DXT1_RGB)
@@ -3289,10 +2726,8 @@ unsigned int rlLoadTexture(const void *data, int width, int height, int format, 
     int mipOffset = 0;
     (void)mipOffset;
 
-
     unsigned char *dataPtr = NULL;
     if (data != NULL) dataPtr = (unsigned char *)data;
-
 
     for (int i = 0; i < mipmapCount; i++)
     {
@@ -3333,21 +2768,16 @@ unsigned int rlLoadTexture(const void *data, int width, int height, int format, 
         mipOffset += mipSize;
         if (data != NULL) dataPtr += mipSize;
 
-
         if (mipWidth < 1) mipWidth = 1;
         if (mipHeight < 1) mipHeight = 1;
     }
 
-
-
 #if defined(GRAPHICS_API_OPENGL_ES2)
-
 
     bool texIsPOT = false;
 
     if (((width > 0) && ((width & (width - 1)) == 0)) &&
         ((height > 0) && ((height & (height - 1)) == 0))) texIsPOT = true;
-
 
     if ((texIsPOT) || (RLGL.ExtSupported.texNPOT))
     {
@@ -3365,7 +2795,6 @@ unsigned int rlLoadTexture(const void *data, int width, int height, int format, 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 #endif
 
-
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
@@ -3376,21 +2805,11 @@ unsigned int rlLoadTexture(const void *data, int width, int height, int format, 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
-
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mipmapCount - 1);
 
-
-
-
-
     }
 #endif
-
-
-
-
-
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -3399,8 +2818,6 @@ unsigned int rlLoadTexture(const void *data, int width, int height, int format, 
 
     return id;
 }
-
-
 
 unsigned int rlLoadTextureDepth(int width, int height, bool useRenderBuffer)
 {
@@ -3411,12 +2828,9 @@ unsigned int rlLoadTextureDepth(int width, int height, bool useRenderBuffer)
 
     if (!RLGL.ExtSupported.texDepth) useRenderBuffer = true;
 
-
-
     unsigned int glInternalFormat = GL_DEPTH_COMPONENT;
 
 #if defined(GRAPHICS_API_OPENGL_ES2)
-
 
     if (!RLGL.ExtSupported.texDepthWebGL || useRenderBuffer)
     {
@@ -3426,8 +2840,6 @@ unsigned int rlLoadTextureDepth(int width, int height, bool useRenderBuffer)
     }
 #endif
 #if defined(GRAPHICS_API_OPENGL_ES3)
-
-
 
     if (RLGL.ExtSupported.maxDepthBits == 24) glInternalFormat = GL_DEPTH_COMPONENT24;
     else glInternalFormat = GL_DEPTH_COMPONENT16;
@@ -3451,7 +2863,6 @@ unsigned int rlLoadTextureDepth(int width, int height, bool useRenderBuffer)
     else
     {
 
-
         glGenRenderbuffers(1, &id);
         glBindRenderbuffer(GL_RENDERBUFFER, id);
         glRenderbufferStorage(GL_RENDERBUFFER, glInternalFormat, width, height);
@@ -3462,7 +2873,6 @@ unsigned int rlLoadTextureDepth(int width, int height, bool useRenderBuffer)
     }
 #elif defined(GRAPHICS_API_OPENGL_SOFTWARE)
 
-
     glGenRenderbuffers(1, &id);
     glBindRenderbuffer(GL_RENDERBUFFER, id);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, width, height);
@@ -3472,9 +2882,6 @@ unsigned int rlLoadTextureDepth(int width, int height, bool useRenderBuffer)
     return id;
 }
 
-
-
-
 unsigned int rlLoadTextureCubemap(const void *data, int size, int format, int mipmapCount)
 {
     unsigned int id = 0;
@@ -3482,7 +2889,6 @@ unsigned int rlLoadTextureCubemap(const void *data, int size, int format, int mi
 
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     int mipSize = size;
-
 
     unsigned char *dataPtr = NULL;
     if (data != NULL) dataPtr = (unsigned char *)data;
@@ -3542,14 +2948,12 @@ unsigned int rlLoadTextureCubemap(const void *data, int size, int format, int mi
                 mipSize /= 2;
                 if (data != NULL) dataPtr += dataSize*6;
 
-
                 if (mipSize < 1) mipSize = 1;
 
                 dataSize = rlGetPixelDataSize(mipSize, mipSize, format);
             }
         }
     }
-
 
     if (mipmapCount > 1) glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     else glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -3570,8 +2974,6 @@ unsigned int rlLoadTextureCubemap(const void *data, int size, int format, int mi
     return id;
 }
 
-
-
 void rlUpdateTexture(unsigned int id, int offsetX, int offsetY, int width, int height, int format, const void *data)
 {
     glBindTexture(GL_TEXTURE_2D, id);
@@ -3585,7 +2987,6 @@ void rlUpdateTexture(unsigned int id, int offsetX, int offsetY, int width, int h
     }
     else TRACELOG(RL_LOG_WARNING, "TEXTURE: [ID %i] Failed to update for current texture format (%i)", id, format);
 }
-
 
 void rlGetGlTextureFormats(int format, unsigned int *glInternalFormat, unsigned int *glFormat, unsigned int *glType)
 {
@@ -3659,13 +3060,10 @@ void rlGetGlTextureFormats(int format, unsigned int *glInternalFormat, unsigned 
     }
 }
 
-
 void rlUnloadTexture(unsigned int id)
 {
     glDeleteTextures(1, &id);
 }
-
-
 
 void rlGenTextureMipmaps(unsigned int id, int width, int height, int format, int *mipmaps)
 {
@@ -3673,7 +3071,6 @@ void rlGenTextureMipmaps(unsigned int id, int width, int height, int format, int
 
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     glBindTexture(GL_TEXTURE_2D, id);
-
 
     bool texIsPOT = false;
 
@@ -3699,24 +3096,12 @@ void rlGenTextureMipmaps(unsigned int id, int width, int height, int format, int
 #endif
 }
 
-
 void *rlReadTexturePixels(unsigned int id, int width, int height, int format)
 {
     void *pixels = NULL;
 
 #if defined(GRAPHICS_API_OPENGL_11) || defined(GRAPHICS_API_OPENGL_33)
     glBindTexture(GL_TEXTURE_2D, id);
-
-
-
-
-
-
-
-
-
-
-
 
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
@@ -3736,17 +3121,10 @@ void *rlReadTexturePixels(unsigned int id, int width, int height, int format)
 
 #if defined(GRAPHICS_API_OPENGL_ES2)
 
-
-
-
-
-
-
     unsigned int fboId = rlLoadFramebuffer();
 
     glBindFramebuffer(GL_FRAMEBUFFER, fboId);
     glBindTexture(GL_TEXTURE_2D, 0);
-
 
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, id, 0);
 
@@ -3764,13 +3142,11 @@ void *rlReadTexturePixels(unsigned int id, int width, int height, int format)
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-
     rlUnloadFramebuffer(fboId);
 #endif
 
     return pixels;
 }
-
 
 void rlCopyFramebuffer(int x, int y, int width, int height, int format, void *pixels)
 {
@@ -3781,7 +3157,6 @@ void rlCopyFramebuffer(int x, int y, int width, int height, int format, void *pi
 #endif
 }
 
-
 void rlResizeFramebuffer(int width, int height)
 {
 #if defined(GRAPHICS_API_OPENGL_SOFTWARE)
@@ -3789,20 +3164,11 @@ void rlResizeFramebuffer(int width, int height)
 #endif
 }
 
-
 unsigned char *rlReadScreenPixels(int width, int height)
 {
     unsigned char *imgData = (unsigned char *)RL_CALLOC(width*height*4, sizeof(unsigned char));
 
-
-
-
-
-
-
     glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, imgData);
-
-
 
     for (int y = height - 1; y >= height/2; y--)
     {
@@ -3830,10 +3196,6 @@ unsigned char *rlReadScreenPixels(int width, int height)
     return imgData;
 }
 
-
-
-
-
 unsigned int rlLoadFramebuffer(void)
 {
     unsigned int fboId = 0;
@@ -3846,8 +3208,6 @@ unsigned int rlLoadFramebuffer(void)
 
     return fboId;
 }
-
-
 
 void rlFramebufferAttach(unsigned int id, unsigned int texId, int attachType, int texType, int mipLevel)
 {
@@ -3886,7 +3246,6 @@ void rlFramebufferAttach(unsigned int id, unsigned int texId, int attachType, in
 #endif
 }
 
-
 bool rlFramebufferComplete(unsigned int id)
 {
     bool result = false;
@@ -3918,8 +3277,6 @@ bool rlFramebufferComplete(unsigned int id)
     return result;
 }
 
-
-
 void rlUnloadFramebuffer(unsigned int id)
 {
 #if (defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2) || defined(GRAPHICS_API_OPENGL_SOFTWARE))
@@ -3928,8 +3285,6 @@ void rlUnloadFramebuffer(unsigned int id)
     glBindFramebuffer(GL_FRAMEBUFFER, id);
     glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &depthType);
 
-
-
     int depthId = 0;
     glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &depthId);
 
@@ -3937,18 +3292,12 @@ void rlUnloadFramebuffer(unsigned int id)
     if (depthType == GL_RENDERBUFFER) glDeleteRenderbuffers(1, &depthIdU);
     else if (depthType == GL_TEXTURE) glDeleteTextures(1, &depthIdU);
 
-
-
-
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDeleteFramebuffers(1, &id);
 
     TRACELOG(RL_LOG_INFO, "FBO: [ID %i] Unloaded framebuffer from VRAM (GPU)", id);
 #endif
 }
-
-
-
 
 unsigned int rlLoadVertexBuffer(const void *buffer, int size, bool dynamic)
 {
@@ -3964,7 +3313,6 @@ unsigned int rlLoadVertexBuffer(const void *buffer, int size, bool dynamic)
     return id;
 }
 
-
 unsigned int rlLoadVertexBufferElement(const void *buffer, int size, bool dynamic)
 {
     unsigned int id = 0;
@@ -3979,14 +3327,12 @@ unsigned int rlLoadVertexBufferElement(const void *buffer, int size, bool dynami
     return id;
 }
 
-
 void rlEnableVertexBuffer(unsigned int id)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     glBindBuffer(GL_ARRAY_BUFFER, id);
 #endif
 }
-
 
 void rlDisableVertexBuffer(void)
 {
@@ -3995,7 +3341,6 @@ void rlDisableVertexBuffer(void)
 #endif
 }
 
-
 void rlEnableVertexBufferElement(unsigned int id)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
@@ -4003,15 +3348,12 @@ void rlEnableVertexBufferElement(unsigned int id)
 #endif
 }
 
-
 void rlDisableVertexBufferElement(void)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 #endif
 }
-
-
 
 void rlUpdateVertexBuffer(unsigned int id, const void *data, int dataSize, int offset)
 {
@@ -4021,8 +3363,6 @@ void rlUpdateVertexBuffer(unsigned int id, const void *data, int dataSize, int o
 #endif
 }
 
-
-
 void rlUpdateVertexBufferElements(unsigned int id, const void *data, int dataSize, int offset)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
@@ -4030,7 +3370,6 @@ void rlUpdateVertexBufferElements(unsigned int id, const void *data, int dataSiz
     glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, dataSize, data);
 #endif
 }
-
 
 bool rlEnableVertexArray(unsigned int vaoId)
 {
@@ -4045,14 +3384,12 @@ bool rlEnableVertexArray(unsigned int vaoId)
     return result;
 }
 
-
 void rlDisableVertexArray(void)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     if (RLGL.ExtSupported.vao) glBindVertexArray(0);
 #endif
 }
-
 
 void rlEnableVertexAttribute(unsigned int index)
 {
@@ -4061,7 +3398,6 @@ void rlEnableVertexAttribute(unsigned int index)
 #endif
 }
 
-
 void rlDisableVertexAttribute(unsigned int index)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
@@ -4069,12 +3405,10 @@ void rlDisableVertexAttribute(unsigned int index)
 #endif
 }
 
-
 void rlDrawVertexArray(int offset, int count)
 {
     glDrawArrays(GL_TRIANGLES, offset, count);
 }
-
 
 void rlDrawVertexArrayElements(int offset, int count, const void *buffer)
 {
@@ -4085,14 +3419,12 @@ void rlDrawVertexArrayElements(int offset, int count, const void *buffer)
     glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_SHORT, (const unsigned short *)bufferPtr);
 }
 
-
 void rlDrawVertexArrayInstanced(int offset, int count, int instances)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     glDrawArraysInstanced(GL_TRIANGLES, offset, count, instances);
 #endif
 }
-
 
 void rlDrawVertexArrayElementsInstanced(int offset, int count, const void *buffer, int instances)
 {
@@ -4104,7 +3436,6 @@ void rlDrawVertexArrayElementsInstanced(int offset, int count, const void *buffe
     glDrawElementsInstanced(GL_TRIANGLES, count, GL_UNSIGNED_SHORT, (const unsigned short *)bufferPtr, instances);
 #endif
 }
-
 
 void rlEnableStatePointer(int vertexAttribType, void *buffer)
 {
@@ -4122,14 +3453,12 @@ void rlEnableStatePointer(int vertexAttribType, void *buffer)
 #endif
 }
 
-
 void rlDisableStatePointer(int vertexAttribType)
 {
 #if defined(GRAPHICS_API_OPENGL_11)
     glDisableClientState(vertexAttribType);
 #endif
 }
-
 
 unsigned int rlLoadVertexArray(void)
 {
@@ -4143,20 +3472,14 @@ unsigned int rlLoadVertexArray(void)
     return vaoId;
 }
 
-
 void rlSetVertexAttribute(unsigned int index, int compSize, int type, bool normalized, int stride, int offset)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
-
-
-
-
 
     size_t offsetNative = offset;
     glVertexAttribPointer(index, compSize, type, normalized, stride, (void *)offsetNative);
 #endif
 }
-
 
 void rlSetVertexAttributeDivisor(unsigned int index, int divisor)
 {
@@ -4164,7 +3487,6 @@ void rlSetVertexAttributeDivisor(unsigned int index, int divisor)
     glVertexAttribDivisor(index, divisor);
 #endif
 }
-
 
 void rlUnloadVertexArray(unsigned int vaoId)
 {
@@ -4178,7 +3500,6 @@ void rlUnloadVertexArray(unsigned int vaoId)
 #endif
 }
 
-
 void rlUnloadVertexBuffer(unsigned int vboId)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
@@ -4186,9 +3507,6 @@ void rlUnloadVertexBuffer(unsigned int vboId)
 
 #endif
 }
-
-
-
 
 unsigned int rlLoadShader(const char *code, int type)
 {
@@ -4229,8 +3547,6 @@ unsigned int rlLoadShader(const char *code, int type)
             RL_FREE(log);
         }
 
-
-
         glDeleteShader(shaderId);
         shaderId = 0;
     }
@@ -4254,8 +3570,6 @@ unsigned int rlLoadShader(const char *code, int type)
     return shaderId;
 }
 
-
-
 unsigned int rlLoadShaderProgram(const char *vsCode, const char *fsCode)
 {
     unsigned int id = 0;
@@ -4265,24 +3579,17 @@ unsigned int rlLoadShaderProgram(const char *vsCode, const char *fsCode)
     unsigned int vertexShaderId = 0;
     unsigned int fragmentShaderId = 0;
 
-
-
     if (vsCode != NULL) vertexShaderId = rlLoadShader(vsCode, GL_VERTEX_SHADER);
     else vertexShaderId = RLGL.State.defaultVShaderId;
 
-
-
     if (fsCode != NULL) fragmentShaderId = rlLoadShader(fsCode, GL_FRAGMENT_SHADER);
     else fragmentShaderId = RLGL.State.defaultFShaderId;
-
 
     if ((vertexShaderId == RLGL.State.defaultVShaderId) && (fragmentShaderId == RLGL.State.defaultFShaderId)) id = RLGL.State.defaultShaderId;
     else if ((vertexShaderId > 0) && (fragmentShaderId > 0))
     {
 
         id = rlLoadShaderProgramEx(vertexShaderId, fragmentShaderId);
-
-
 
         if (vertexShaderId != RLGL.State.defaultVShaderId)
         {
@@ -4297,7 +3604,6 @@ unsigned int rlLoadShaderProgram(const char *vsCode, const char *fsCode)
             glDeleteShader(fragmentShaderId);
         }
 
-
         if (id == 0)
         {
 
@@ -4305,34 +3611,11 @@ unsigned int rlLoadShaderProgram(const char *vsCode, const char *fsCode)
             id = RLGL.State.defaultShaderId;
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     }
 #endif
 
     return id;
 }
-
 
 unsigned int rlLoadShaderProgramEx(unsigned int vsId, unsigned int fsId)
 {
@@ -4346,9 +3629,6 @@ unsigned int rlLoadShaderProgramEx(unsigned int vsId, unsigned int fsId)
     glAttachShader(programId, vsId);
     glAttachShader(programId, fsId);
 
-
-
-
     glBindAttribLocation(programId, RL_DEFAULT_SHADER_ATTRIB_LOCATION_POSITION, RL_DEFAULT_SHADER_ATTRIB_NAME_POSITION);
     glBindAttribLocation(programId, RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD, RL_DEFAULT_SHADER_ATTRIB_NAME_TEXCOORD);
     glBindAttribLocation(programId, RL_DEFAULT_SHADER_ATTRIB_LOCATION_NORMAL, RL_DEFAULT_SHADER_ATTRIB_NAME_NORMAL);
@@ -4360,8 +3640,6 @@ unsigned int rlLoadShaderProgramEx(unsigned int vsId, unsigned int fsId)
     glBindAttribLocation(programId, RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEWEIGHTS, RL_DEFAULT_SHADER_ATTRIB_NAME_BONEWEIGHTS);
 
     glLinkProgram(programId);
-
-
 
     glGetProgramiv(programId, GL_LINK_STATUS, &success);
 
@@ -4388,16 +3666,11 @@ unsigned int rlLoadShaderProgramEx(unsigned int vsId, unsigned int fsId)
     else
     {
 
-
-
-
-
         TRACELOG(RL_LOG_INFO, "SHADER: [ID %i] Program shader loaded successfully", programId);
     }
 #endif
     return programId;
 }
-
 
 unsigned int rlLoadShaderProgramCompute(unsigned int csId)
 {
@@ -4410,8 +3683,6 @@ unsigned int rlLoadShaderProgramCompute(unsigned int csId)
     glAttachShader(programId, csId);
 
     glLinkProgram(programId);
-
-
 
     glGetProgramiv(programId, GL_LINK_STATUS, &success);
 
@@ -4438,10 +3709,6 @@ unsigned int rlLoadShaderProgramCompute(unsigned int csId)
     else
     {
 
-
-
-
-
         TRACELOG(RL_LOG_INFO, "SHADER: [ID %i] Compute shader program loaded successfully", programId);
     }
 #else
@@ -4450,7 +3717,6 @@ unsigned int rlLoadShaderProgramCompute(unsigned int csId)
 
     return programId;
 }
-
 
 void rlUnloadShader(unsigned int id)
 {
@@ -4461,7 +3727,6 @@ void rlUnloadShader(unsigned int id)
 #endif
 }
 
-
 void rlUnloadShaderProgram(unsigned int id)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
@@ -4471,21 +3736,15 @@ void rlUnloadShaderProgram(unsigned int id)
 #endif
 }
 
-
-
 int rlGetLocationUniform(unsigned int id, const char *uniformName)
 {
     int location = -1;
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     location = glGetUniformLocation(id, uniformName);
 
-
-
 #endif
     return location;
 }
-
-
 
 int rlGetLocationAttrib(unsigned int id, const char *attribName)
 {
@@ -4493,12 +3752,9 @@ int rlGetLocationAttrib(unsigned int id, const char *attribName)
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     location = glGetAttribLocation(id, attribName);
 
-
-
 #endif
     return location;
 }
-
 
 void rlSetUniform(int locIndex, const void *value, int uniformType, int count)
 {
@@ -4525,7 +3781,6 @@ void rlSetUniform(int locIndex, const void *value, int uniformType, int count)
 #endif
 }
 
-
 void rlSetVertexAttributeDefault(int locIndex, const void *value, int attribType, int count)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
@@ -4540,7 +3795,6 @@ void rlSetVertexAttributeDefault(int locIndex, const void *value, int attribType
 #endif
 }
 
-
 void rlSetUniformMatrix(int locIndex, Matrix mat)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
@@ -4548,18 +3802,15 @@ void rlSetUniformMatrix(int locIndex, Matrix mat)
 #endif
 }
 
-
 void rlSetUniformMatrices(int locIndex, const Matrix *matrices, int count)
 {
 #if defined(GRAPHICS_API_OPENGL_33)
     glUniformMatrix4fv(locIndex, count, true, (const float *)matrices);
 #elif defined(GRAPHICS_API_OPENGL_ES2)
 
-
     glUniformMatrix4fv(locIndex, count, false, (const float *)matrices);
 #endif
 }
-
 
 void rlSetUniformSampler(int locIndex, unsigned int textureId)
 {
@@ -4574,8 +3825,6 @@ void rlSetUniformSampler(int locIndex, unsigned int textureId)
         }
     }
 
-
-
     for (int i = 0; i < RL_DEFAULT_BATCH_MAX_TEXTURE_UNITS; i++)
     {
         if (RLGL.State.activeTextureId[i] == 0)
@@ -4587,7 +3836,6 @@ void rlSetUniformSampler(int locIndex, unsigned int textureId)
     }
 #endif
 }
-
 
 void rlSetShader(unsigned int id, int *locs)
 {
@@ -4601,14 +3849,12 @@ void rlSetShader(unsigned int id, int *locs)
 #endif
 }
 
-
 void rlComputeShaderDispatch(unsigned int groupX, unsigned int groupY, unsigned int groupZ)
 {
 #if defined(GRAPHICS_API_OPENGL_43)
     glDispatchCompute(groupX, groupY, groupZ);
 #endif
 }
-
 
 unsigned int rlLoadShaderBuffer(unsigned int size, const void *data, int usageHint)
 {
@@ -4627,7 +3873,6 @@ unsigned int rlLoadShaderBuffer(unsigned int size, const void *data, int usageHi
     return ssbo;
 }
 
-
 void rlUnloadShaderBuffer(unsigned int ssboId)
 {
 #if defined(GRAPHICS_API_OPENGL_43)
@@ -4637,7 +3882,6 @@ void rlUnloadShaderBuffer(unsigned int ssboId)
 #endif
 }
 
-
 void rlUpdateShaderBuffer(unsigned int id, const void *data, unsigned int dataSize, unsigned int offset)
 {
 #if defined(GRAPHICS_API_OPENGL_43)
@@ -4645,7 +3889,6 @@ void rlUpdateShaderBuffer(unsigned int id, const void *data, unsigned int dataSi
     glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, dataSize, data);
 #endif
 }
-
 
 unsigned int rlGetShaderBufferSize(unsigned int id)
 {
@@ -4659,7 +3902,6 @@ unsigned int rlGetShaderBufferSize(unsigned int id)
     return result;
 }
 
-
 void rlReadShaderBuffer(unsigned int id, void *dest, unsigned int count, unsigned int offset)
 {
 #if defined(GRAPHICS_API_OPENGL_43)
@@ -4668,14 +3910,12 @@ void rlReadShaderBuffer(unsigned int id, void *dest, unsigned int count, unsigne
 #endif
 }
 
-
 void rlBindShaderBuffer(unsigned int id, unsigned int index)
 {
 #if defined(GRAPHICS_API_OPENGL_43)
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, id);
 #endif
 }
-
 
 void rlCopyShaderBuffer(unsigned int destId, unsigned int srcId, unsigned int destOffset, unsigned int srcOffset, unsigned int count)
 {
@@ -4685,7 +3925,6 @@ void rlCopyShaderBuffer(unsigned int destId, unsigned int srcId, unsigned int de
     glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, srcOffset, destOffset, count);
 #endif
 }
-
 
 void rlBindImageTexture(unsigned int id, unsigned int index, int format, bool readonly)
 {
@@ -4698,9 +3937,6 @@ void rlBindImageTexture(unsigned int id, unsigned int index, int format, bool re
     TRACELOG(RL_LOG_WARNING, "TEXTURE: Image texture binding not enabled. Define GRAPHICS_API_OPENGL_43");
 #endif
 }
-
-
-
 
 Matrix rlGetMatrixModelview(void)
 {
@@ -4730,7 +3966,6 @@ Matrix rlGetMatrixModelview(void)
     return matrix;
 }
 
-
 Matrix rlGetMatrixProjection(void)
 {
 #if defined(GRAPHICS_API_OPENGL_11)
@@ -4759,20 +3994,15 @@ Matrix rlGetMatrixProjection(void)
 #endif
 }
 
-
 Matrix rlGetMatrixTransform(void)
 {
     Matrix mat = rlMatrixIdentity();
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
 
-
-
-
     mat = RLGL.State.transform;
 #endif
     return mat;
 }
-
 
 Matrix rlGetMatrixProjectionStereo(int eye)
 {
@@ -4783,7 +4013,6 @@ Matrix rlGetMatrixProjectionStereo(int eye)
     return mat;
 }
 
-
 Matrix rlGetMatrixViewOffsetStereo(int eye)
 {
     Matrix mat = rlMatrixIdentity();
@@ -4793,7 +4022,6 @@ Matrix rlGetMatrixViewOffsetStereo(int eye)
     return mat;
 }
 
-
 void rlSetMatrixModelview(Matrix view)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
@@ -4801,14 +4029,12 @@ void rlSetMatrixModelview(Matrix view)
 #endif
 }
 
-
 void rlSetMatrixProjection(Matrix projection)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     RLGL.State.projection = projection;
 #endif
 }
-
 
 void rlSetMatrixProjectionStereo(Matrix right, Matrix left)
 {
@@ -4818,7 +4044,6 @@ void rlSetMatrixProjectionStereo(Matrix right, Matrix left)
 #endif
 }
 
-
 void rlSetMatrixViewOffsetStereo(Matrix right, Matrix left)
 {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
@@ -4826,7 +4051,6 @@ void rlSetMatrixViewOffsetStereo(Matrix right, Matrix left)
     RLGL.State.viewOffsetStereo[1] = left;
 #endif
 }
-
 
 void rlLoadDrawQuad(void)
 {
@@ -4842,32 +4066,26 @@ void rlLoadDrawQuad(void)
          1.0f, -1.0f, 0.0f,   1.0f, 0.0f,
     };
 
-
     glGenVertexArrays(1, &quadVAO);
     glBindVertexArray(quadVAO);
-
 
     glGenBuffers(1, &quadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW);
-
 
     glEnableVertexAttribArray(RL_DEFAULT_SHADER_ATTRIB_LOCATION_POSITION);
     glVertexAttribPointer(RL_DEFAULT_SHADER_ATTRIB_LOCATION_POSITION, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void *)0);
     glEnableVertexAttribArray(RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD);
     glVertexAttribPointer(RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void *)(3*sizeof(float)));
 
-
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glBindVertexArray(0);
-
 
     glDeleteBuffers(1, &quadVBO);
     glDeleteVertexArrays(1, &quadVAO);
 #endif
 }
-
 
 void rlLoadDrawCube(void)
 {
@@ -4915,15 +4133,12 @@ void rlLoadDrawCube(void)
         -1.0f,  1.0f,  1.0f,   0.0f,  1.0f,  0.0f,   0.0f, 0.0f
     };
 
-
     glGenVertexArrays(1, &cubeVAO);
     glBindVertexArray(cubeVAO);
-
 
     glGenBuffers(1, &cubeVBO);
     glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
 
     glBindVertexArray(cubeVAO);
     glEnableVertexAttribArray(RL_DEFAULT_SHADER_ATTRIB_LOCATION_POSITION);
@@ -4935,17 +4150,14 @@ void rlLoadDrawCube(void)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-
     glBindVertexArray(cubeVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
-
 
     glDeleteBuffers(1, &cubeVBO);
     glDeleteVertexArrays(1, &cubeVAO);
 #endif
 }
-
 
 const char *rlGetPixelFormatName(unsigned int format)
 {
@@ -4979,20 +4191,13 @@ const char *rlGetPixelFormatName(unsigned int format)
     }
 }
 
-
-
-
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
-
-
 
 static void rlLoadShaderDefault(void)
 {
     RLGL.State.defaultShaderLocs = (int *)RL_CALLOC(RL_MAX_SHADER_LOCATIONS, sizeof(int));
 
-
     for (int i = 0; i < RL_MAX_SHADER_LOCATIONS; i++) RLGL.State.defaultShaderLocs[i] = -1;
-
 
     const char *defaultVShaderCode =
 #if defined(GRAPHICS_API_OPENGL_21)
@@ -5036,7 +4241,6 @@ static void rlLoadShaderDefault(void)
     "    fragColor = vertexColor;       \n"
     "    gl_Position = mvp*vec4(vertexPosition, 1.0); \n"
     "}                                  \n";
-
 
     const char *defaultFShaderCode =
 #if defined(GRAPHICS_API_OPENGL_21)
@@ -5099,8 +4303,6 @@ static void rlLoadShaderDefault(void)
     "}                                  \n";
 #endif
 
-
-
     RLGL.State.defaultVShaderId = rlLoadShader(defaultVShaderCode, GL_VERTEX_SHADER);
     RLGL.State.defaultFShaderId = rlLoadShader(defaultFShaderCode, GL_FRAGMENT_SHADER);
 
@@ -5110,11 +4312,9 @@ static void rlLoadShaderDefault(void)
     {
         TRACELOG(RL_LOG_INFO, "SHADER: [ID %i] Default shader loaded successfully", RLGL.State.defaultShaderId);
 
-
         RLGL.State.defaultShaderLocs[RL_SHADER_LOC_VERTEX_POSITION] = glGetAttribLocation(RLGL.State.defaultShaderId, RL_DEFAULT_SHADER_ATTRIB_NAME_POSITION);
         RLGL.State.defaultShaderLocs[RL_SHADER_LOC_VERTEX_TEXCOORD01] = glGetAttribLocation(RLGL.State.defaultShaderId, RL_DEFAULT_SHADER_ATTRIB_NAME_TEXCOORD);
         RLGL.State.defaultShaderLocs[RL_SHADER_LOC_VERTEX_COLOR] = glGetAttribLocation(RLGL.State.defaultShaderId, RL_DEFAULT_SHADER_ATTRIB_NAME_COLOR);
-
 
         RLGL.State.defaultShaderLocs[RL_SHADER_LOC_MATRIX_MVP] = glGetUniformLocation(RLGL.State.defaultShaderId, RL_DEFAULT_SHADER_UNIFORM_NAME_MVP);
         RLGL.State.defaultShaderLocs[RL_SHADER_LOC_COLOR_DIFFUSE] = glGetUniformLocation(RLGL.State.defaultShaderId, RL_DEFAULT_SHADER_UNIFORM_NAME_COLOR);
@@ -5122,8 +4322,6 @@ static void rlLoadShaderDefault(void)
     }
     else TRACELOG(RL_LOG_WARNING, "SHADER: [ID %i] Failed to load default shader", RLGL.State.defaultShaderId);
 }
-
-
 
 static void rlUnloadShaderDefault(void)
 {
@@ -5219,8 +4417,6 @@ static const char *rlGetCompressedFormatName(int format)
 
 #endif
 
-
-
 static int rlGetPixelDataSize(int width, int height, int format)
 {
     int dataSize = 0;
@@ -5278,7 +4474,6 @@ static int rlGetPixelDataSize(int width, int height, int format)
         default: break;
     }
 
-
     if ((format >= RL_PIXELFORMAT_UNCOMPRESSED_GRAYSCALE) &&
         (format <= RL_PIXELFORMAT_UNCOMPRESSED_R16G16B16A16))
     {
@@ -5289,9 +4484,6 @@ static int rlGetPixelDataSize(int width, int height, int format)
 
     return dataSize;
 }
-
-
-
 
 static Matrix rlMatrixIdentity(void)
 {
@@ -5304,7 +4496,6 @@ static Matrix rlMatrixIdentity(void)
     return matIdentity;
 }
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
-
 
 static rl_float16 rlMatrixToFloatV(Matrix mat)
 {
@@ -5330,8 +4521,6 @@ static rl_float16 rlMatrixToFloatV(Matrix mat)
     return result;
 }
 
-
-
 static Matrix rlMatrixMultiply(Matrix left, Matrix right)
 {
     Matrix result = { 0 };
@@ -5355,7 +4544,6 @@ static Matrix rlMatrixMultiply(Matrix left, Matrix right)
 
     return result;
 }
-
 
 static Matrix rlMatrixTranspose(Matrix mat)
 {
@@ -5381,11 +4569,9 @@ static Matrix rlMatrixTranspose(Matrix mat)
     return result;
 }
 
-
 static Matrix rlMatrixInvert(Matrix mat)
 {
     Matrix result = { 0 };
-
 
     float a00 = mat.m0, a01 = mat.m1, a02 = mat.m2, a03 = mat.m3;
     float a10 = mat.m4, a11 = mat.m5, a12 = mat.m6, a13 = mat.m7;
@@ -5404,7 +4590,6 @@ static Matrix rlMatrixInvert(Matrix mat)
     float b09 = a21*a32 - a22*a31;
     float b10 = a21*a33 - a23*a31;
     float b11 = a22*a33 - a23*a32;
-
 
     float invDet = 1.0f/(b00*b11 - b01*b10 + b02*b09 + b03*b08 - b04*b07 + b05*b06);
 

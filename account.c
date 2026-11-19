@@ -1,8 +1,3 @@
-
-
-
-
-
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 #endif
@@ -15,8 +10,6 @@
 
 #define USERS_FILE "users.txt"
 #define USER_MAX 100
-
-
 
 #define PAGE_CENTER_X    400.0f
 #define PANEL_X          140.0f
@@ -38,13 +31,11 @@
 #define MESSAGE_Y        482.0f
 #define FOOT_Y           520.0f
 
-
 static const Rectangle nameBox = {INPUT_X, NAME_BOX_Y, INPUT_W, INPUT_H};
 static const Rectangle passwordBox = {INPUT_X, PASSWORD_BOX_Y, INPUT_W, INPUT_H};
 static const Rectangle confirmBox = {INPUT_X, CONFIRM_BOX_Y, INPUT_W, INPUT_H};
 static const Rectangle primaryButton = {BUTTON_LEFT_X, BUTTON_Y, BUTTON_W, BUTTON_H};
 static const Rectangle backButton = {BUTTON_RIGHT_X, BUTTON_Y, BUTTON_W, BUTTON_H};
-
 
 static char  gName[NAME_MAX];
 static int   gNameLength;
@@ -57,7 +48,6 @@ static int   gRegisterMode;
 static char  gMessage[128];
 static int   gMessageIsError;
 static int   gLoadError;
-
 
 static const Color COLOR_PANEL       = { 248, 249, 251, 255 };
 static const Color COLOR_PANEL_LINE  = { 205, 211, 219, 255 };
@@ -72,7 +62,6 @@ static const Color COLOR_OK          = {  22, 120,  60, 255 };
 static const Color COLOR_ERROR       = { 176,  48,  48, 255 };
 static const Color COLOR_HINT        = { 110, 118, 130, 255 };
 static const Color COLOR_FOOT        = { 130, 136, 148, 255 };
-
 
 static int loadUsers(User users[], int maxCount);
 static int findUser(const User users[], int count, const char name[]);
@@ -91,12 +80,6 @@ static void drawTextCentered(Font font, const char *text, float centerX, float y
 static void drawInputBox(Font font, Rectangle box, const char *text,
                          const char *placeholder, int focused);
 static void drawStrengthHint(Font font);
-
-
-
-
-
-
 
 static int checkPassword(char password[])
 {
@@ -148,9 +131,6 @@ static int checkPassword(char password[])
     return 2;
 }
 
-
-
-
 static int registerUser(User user)
 {
     FILE *fp;
@@ -159,7 +139,6 @@ static int registerUser(User user)
     {
         return 0;
     }
-
 
     if (fprintf(fp, "%s %s\n", user.name, user.password) < 0)
     {
@@ -173,9 +152,6 @@ static int registerUser(User user)
     }
     return 1;
 }
-
-
-
 
 static int loginUser(User user)
 {
@@ -196,9 +172,6 @@ static int loginUser(User user)
     return 0;
 }
 
-
-
-
 static int loadUsers(User users[], int maxCount)
 
 {
@@ -217,7 +190,6 @@ static int loadUsers(User users[], int maxCount)
         return 0;
     }
 
-
     while (count < maxCount &&
            fscanf(fp, "%31s %63s", users[count].name, users[count].password) == 2)
 
@@ -234,9 +206,6 @@ static int loadUsers(User users[], int maxCount)
     return count;
 }
 
-
-
-
 static int findUser(const User users[], int count, const char name[])
 
 {
@@ -252,17 +221,12 @@ static int findUser(const User users[], int count, const char name[])
     return -1;
 }
 
-
-
 static void setMessage(const char *text, int isError)
 {
     strncpy(gMessage, text, sizeof(gMessage) - 1);
     gMessage[sizeof(gMessage) - 1] = '\0';
     gMessageIsError = (isError != 0) ? 1 : 0;
 }
-
-
-
 
 static void clearInputs(void)
 {
@@ -275,18 +239,11 @@ static void clearInputs(void)
     gFocus = 0;
 }
 
-
-
-
 static void buildUserFromForm(User *user)
 {
     strcpy(user->name, gName);
     strcpy(user->password, gPassword);
 }
-
-
-
-
 
 static void handleCharInput(void)
 {
@@ -327,9 +284,6 @@ static void handleCharInput(void)
     }
 }
 
-
-
-
 static void handleBackspace(void)
 {
     char *text;
@@ -359,9 +313,6 @@ static void handleBackspace(void)
     text[*length] = '\0';
 }
 
-
-
-
 static int tryLogin(User *user)
 {
     User input;
@@ -388,18 +339,11 @@ static int tryLogin(User *user)
         return 1;
     }
 
-
     setMessage((gLoadError != 0) ? "账号文件读取失败，请检查 users.txt"
                                  : "用户名或密码错误", 1);
     gFocus = 1;
     return 0;
 }
-
-
-
-
-
-
 
 static int registerCurrentForm(void)
 {
@@ -445,7 +389,6 @@ static int registerCurrentForm(void)
         return 0;
     }
 
-
     count = loadUsers(users, USER_MAX);
     if (gLoadError != 0)
     {
@@ -467,11 +410,6 @@ static int registerCurrentForm(void)
     return saveCurrentUser();
 }
 
-
-
-
-
-
 static int saveCurrentUser(void)
 {
     User newUser;
@@ -489,9 +427,6 @@ static int saveCurrentUser(void)
     return 0;
 }
 
-
-
-
 void resetAccountPage(int registerMode)
 {
     gRegisterMode = (registerMode != 0) ? 1 : 0;
@@ -499,11 +434,6 @@ void resetAccountPage(int registerMode)
     gMessage[0] = '\0';
     gMessageIsError = 0;
 }
-
-
-
-
-
 
 int updateAccountPage(User *user)
 {
@@ -535,7 +465,6 @@ int updateAccountPage(User *user)
         }
     }
 
-
     if (IsKeyPressed(KEY_ENTER) || isButtonClicked(primaryButton) != 0)
     {
         if (gRegisterMode != 0)
@@ -553,17 +482,11 @@ int updateAccountPage(User *user)
     return 0;
 }
 
-
-
-
 static void drawTextAt(Font font, const char *text, float x, float y, int fontSize,
                        Color color)
 {
     DrawTextEx(font, text, (Vector2){x, y}, (float)fontSize, 1.0f, color);
 }
-
-
-
 
 static void drawTextCentered(Font font, const char *text, float centerX, float y,
                              int fontSize, Color color)
@@ -573,10 +496,6 @@ static void drawTextCentered(Font font, const char *text, float centerX, float y
     DrawTextEx(font, text, (Vector2){centerX - size.x / 2.0f, y},
                (float)fontSize, 1.0f, color);
 }
-
-
-
-
 
 static void drawInputBox(Font font, Rectangle box, const char *text,
                          const char *placeholder, int focused)
@@ -593,7 +512,6 @@ static void drawInputBox(Font font, Rectangle box, const char *text,
 
     textX = box.x + 16.0f;
     textY = box.y + (INPUT_H - 22.0f) / 2.0f;
-
 
     while (visible[0] != '\0' &&
            MeasureTextEx(font, visible, 22.0f, 1.0f).x > available)
@@ -627,8 +545,6 @@ static void drawInputBox(Font font, Rectangle box, const char *text,
     EndScissorMode();
 }
 
-
-
 static void drawStrengthHint(Font font)
 {
     int strength;
@@ -660,8 +576,6 @@ static void drawStrengthHint(Font font)
     drawTextAt(font, text, INPUT_X, STRENGTH_Y, 16, color);
 }
 
-
-
 void drawAccountPage(Font font)
 {
     Rectangle panel = {PANEL_X, PANEL_Y, PANEL_W, PANEL_H};
@@ -671,17 +585,14 @@ void drawAccountPage(Font font)
     DrawRectangleRec(panel, COLOR_PANEL);
     DrawRectangleLinesEx(panel, 2.0f, COLOR_PANEL_LINE);
 
-
     drawTextCentered(font, (gRegisterMode != 0) ? "注册账号" : "账号登录",
                      PAGE_CENTER_X, 54.0f, 32, COLOR_TITLE);
     drawTextCentered(font, (gRegisterMode != 0) ? "设置用户名和密码，注册后请登录"
                                                 : "请输入已有账号登录",
                      PAGE_CENTER_X, 98.0f, 17, COLOR_HINT);
 
-
     drawTextAt(font, "用户名", INPUT_X, 126.0f, 19, COLOR_LABEL);
     drawInputBox(font, nameBox, gName, "请输入用户名", gFocus == 0);
-
 
     memset(masked, '*', (size_t)gPasswordLength);
     masked[gPasswordLength] = '\0';
@@ -698,10 +609,8 @@ void drawAccountPage(Font font)
         drawInputBox(font, confirmBox, maskedConfirm, "请再输一次密码", gFocus == 2);
     }
 
-
     drawButton(primaryButton, (gRegisterMode != 0) ? "注册" : "登录", font);
     drawButton(backButton, "返回", font);
-
 
     if (gMessage[0] != '\0')
     {

@@ -1,21 +1,11 @@
 #define _CRT_SECURE_NO_WARNINGS
 
-
-
-
-
-
-
-
-
 #include "ui.h"
 
 #define UI_FONT_PATH        "assets/fonts/chinese.ttf"
 #define UI_SYSTEM_FONT_PATH "C:/Windows/Fonts/simhei.ttf"
 #define UI_FONT_SIZE        192
 #define UI_CODEPOINT_MAX    1024
-
-
 
 static const char UI_GLYPHS[] =
     "人普说"
@@ -35,12 +25,6 @@ static const char UI_GLYPHS[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     ".:-+/()%#\"$&'*;<=>?@[\\]^_`{|}~!";
 
-
-
-
-
-
-
 int loadUiResources(Font *font)
 {
     static int codepoints[UI_CODEPOINT_MAX];
@@ -53,7 +37,6 @@ int loadUiResources(Font *font)
     int j;
 
     if (font == NULL) return 0;
-
 
     if (!FileExists(path)) path = UI_SYSTEM_FONT_PATH;
     if (!FileExists(path)) return 0;
@@ -81,10 +64,8 @@ int loadUiResources(Font *font)
 
     if (count == 0) return 0;
 
-
     loaded = LoadFontEx(path, UI_FONT_SIZE, codepoints, count);
     if (!IsFontValid(loaded)) return 0;
-
 
     SetTextureFilter(loaded.texture, TEXTURE_FILTER_BILINEAR);
 
@@ -92,22 +73,10 @@ int loadUiResources(Font *font)
     return 1;
 }
 
-
-
-
-
-
-
 void unloadUiResources(Font font)
 {
     if (font.texture.id != 0) UnloadFont(font);
 }
-
-
-
-
-
-
 
 int isButtonClicked(Rectangle bounds)
 {
@@ -116,12 +85,6 @@ int isButtonClicked(Rectangle bounds)
 
     return CheckCollisionPointRec(GetMousePosition(), bounds) ? 1 : 0;
 }
-
-
-
-
-
-
 
 void drawButton(Rectangle bounds, const char text[], Font font)
 {
@@ -136,12 +99,10 @@ void drawButton(Rectangle bounds, const char text[], Font font)
     fill = hover ? (Color){ 222, 236, 252, 255 } : (Color){ 246, 248, 252, 255 };
     border = hover ? (Color){ 70, 130, 190, 255 } : (Color){ 150, 165, 185, 255 };
 
-
     DrawRectangleRec(bounds, fill);
     DrawRectangleLinesEx(bounds, hover ? 2.0f : 1.0f, border);
 
     if (text == NULL || font.texture.id == 0) return;
-
 
     size = MeasureTextEx(font, text, 20.0f, 1.0f);
     pos.x = bounds.x + (bounds.width - size.x) / 2.0f;
@@ -149,12 +110,6 @@ void drawButton(Rectangle bounds, const char text[], Font font)
 
     DrawTextEx(font, text, pos, 20.0f, 1.0f, (Color){ 30, 40, 55, 255 });
 }
-
-
-
-
-
-
 
 Camera2D getUiCamera(void)
 {
@@ -169,10 +124,7 @@ Camera2D getUiCamera(void)
     return camera;
 }
 
-
-
 #define BG_COUNT 3
-
 
 static const char *BG_PATH[BG_COUNT] = {
     "assets/bg/account.png",
@@ -180,13 +132,6 @@ static const char *BG_PATH[BG_COUNT] = {
     "assets/bg/rank.png"
 };
 static Texture2D g_bg[BG_COUNT];
-
-
-
-
-
-
-
 
 int loadBackgrounds(void)
 {
@@ -198,12 +143,6 @@ int loadBackgrounds(void)
     return 1;
 }
 
-
-
-
-
-
-
 void drawBackground(int index)
 {
     Rectangle src = { 0, 0, (float)g_bg[index].width, (float)g_bg[index].height };
@@ -212,12 +151,6 @@ void drawBackground(int index)
 
     DrawTexturePro(g_bg[index], src, dst, (Vector2){ 0, 0 }, 0.0f, WHITE);
 }
-
-
-
-
-
-
 
 void unloadBackgrounds(void)
 {

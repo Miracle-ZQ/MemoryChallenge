@@ -7,13 +7,11 @@
 #include "account.h"
 #include "game.h"
 
-
 #define COLOR_TITLE (Color){ 240, 246, 255, 255 }
 #define COLOR_HINT  (Color){ 190, 202, 220, 255 }
 #define COLOR_OK    (Color){ 120, 220, 160, 255 }
 #define COLOR_WARN  (Color){ 250, 200, 120, 255 }
 #define COLOR_ERROR (Color){ 255, 130, 130, 255 }
-
 
 typedef enum {
     PAGE_ENTRY,
@@ -26,7 +24,6 @@ typedef enum {
     PAGE_RANK,
     PAGE_INTRODUCE
 } Page;
-
 
 static const Rectangle loginButton = {180, 180, 200, 48};
 static const Rectangle registerButton = {420, 180, 200, 48};
@@ -49,7 +46,6 @@ static const Rectangle resultBackButton = {410, 480, 210, 48};
 static void drawCustomConfig(Font font, const CustomGameConfig *cfg);
 static void drawCustomResult(Font font, const CustomGameResult *r, int saveResult);
 
-
 static void drawText(Font font, const char text[], float y, float size, Color color);
 
 static void drawMenu(Font font, int loggedIn);
@@ -57,12 +53,6 @@ static void drawMenu(Font font, int loggedIn);
 static void drawIntroduce(Font font);
 
 static void drawLevels(Font font);
-
-
-
-
-
-
 
 int main(void)
 {
@@ -296,23 +286,11 @@ int main(void)
     return 0;
 }
 
-
-
-
-
-
-
 static void drawText(Font font, const char text[], float y, float size, Color color)
 {
     Vector2 width = MeasureTextEx(font, text, size, 1);
     DrawTextEx(font, text, (Vector2){(800 - width.x) / 2, y}, size, 1, color);
 }
-
-
-
-
-
-
 
 static void drawMenu(Font font, int loggedIn)
 {
@@ -330,12 +308,6 @@ static void drawMenu(Font font, int loggedIn)
     drawButton(exitButton, "退出", font);
 }
 
-
-
-
-
-
-
 static void drawLevels(Font font)
 {
     drawText(font, "选择难度", 80, 36, COLOR_TITLE);
@@ -345,12 +317,6 @@ static void drawLevels(Font font)
     drawButton(customButton, "自定义挑战", font);
     drawButton(backButton, "返回", font);
 }
-
-
-
-
-
-
 
 static void drawCustomConfig(Font font, const CustomGameConfig *cfg)
 {
@@ -374,12 +340,6 @@ static void drawCustomConfig(Font font, const CustomGameConfig *cfg)
     drawText(font, "主动亮牌每次剩余积分乘 0.97，耗时最多扣 30%", 540, 18, COLOR_HINT);
 }
 
-
-
-
-
-
-
 static void drawCustomResult(Font font, const CustomGameResult *r, int saveResult)
 {
     drawText(font, "挑战完成", 55, 34, COLOR_TITLE);
@@ -397,12 +357,6 @@ static void drawCustomResult(Font font, const CustomGameResult *r, int saveResul
     drawButton(resultRankButton, "查看积分榜", font);
     drawButton(resultBackButton, "返回菜单", font);
 }
-
-
-
-
-
-
 
 static void drawIntroduce(Font font)
 {

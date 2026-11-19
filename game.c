@@ -3,7 +3,6 @@
 #include "game.h"
 #include "ui.h"
 
-
 static int cards[6][6];
 static int state[6][6];
 static int selectedRows[3], selectedCols[3];
@@ -21,34 +20,15 @@ static CustomGameConfig customConfig;
 static CustomGameResult customResult;
 static double preciseElapsedSeconds;
 
-
-
-
-
-
-
 static double clampDouble(double v, double lo, double hi)
 {
     return v < lo ? lo : v > hi ? hi : v;
 }
 
-
-
-
-
-
-
 int validateCustomConfig(const CustomGameConfig *cfg)
 {
     return !(cfg->rows * cfg->cols % 2);
 }
-
-
-
-
-
-
-
 
 static void calculateCustomResult(const CustomGameConfig *cfg, int correct,
     int wrong, int reveals, double elapsed, CustomGameResult *out)
@@ -69,12 +49,6 @@ static void calculateCustomResult(const CustomGameConfig *cfg, int correct,
     r.finalScore = (int)floor(raw + .5); *out = r;
 }
 
-
-
-
-
-
-
 int isCustomGame(void) { return customMode; }
 
 typedef enum {
@@ -90,14 +64,12 @@ static GamePhase phase = GAME_PREVIEW;
 static Texture2D faces[CARD_POOL_SIZE];
 static Texture2D back;
 
-
 typedef struct {
     float left, top;
     float cardWidth, cardHeight, gap;
     Rectangle backButton;
     Rectangle revealButton;
 } GameLayout;
-
 
 static void initBoard(int level);
 static void shuffleBoard(void);
@@ -109,12 +81,6 @@ static GameLayout getGameLayout(void);
 static Rectangle cardBounds(GameLayout layout, int row, int col);
 static void drawCardPicture(Texture2D picture, Rectangle bounds);
 
-
-
-
-
-
-
 void loadGameResources(void)
 {
     int i;
@@ -125,12 +91,6 @@ void loadGameResources(void)
         SetTextureFilter(faces[i], TEXTURE_FILTER_BILINEAR);
     }
 }
-
-
-
-
-
-
 
 void startGame(int level)
 {
@@ -152,12 +112,6 @@ void startGame(int level)
     phase = GAME_PREVIEW;
 }
 
-
-
-
-
-
-
 void startCustomGame(const CustomGameConfig *cfg)
 {
     customConfig = *cfg;
@@ -169,22 +123,10 @@ void startCustomGame(const CustomGameConfig *cfg)
     previewEnd = GetTime() + previewSeconds;
 }
 
-
-
-
-
-
-
 void getCustomGameResult(CustomGameResult *out)
 {
     *out = customResult;
 }
-
-
-
-
-
-
 
 void unloadGameResources(void)
 {
@@ -194,12 +136,6 @@ void unloadGameResources(void)
         UnloadTexture(faces[i]);
     }
 }
-
-
-
-
-
-
 
 int updateGame(int *seconds)
 {
@@ -278,33 +214,15 @@ int updateGame(int *seconds)
     return 0;
 }
 
-
-
-
-
-
-
 int getGameMistakes(void)
 {
     return matchErrors;
 }
 
-
-
-
-
-
-
 int getGameCheats(void)
 {
     return cheatCount;
 }
-
-
-
-
-
-
 
 void drawGame(Font font)
 {
@@ -365,12 +283,6 @@ void drawGame(Font font)
     drawButton(layout.backButton, "返回", font);
 }
 
-
-
-
-
-
-
 static void initBoard(int level)
 {
     int pool[CARD_POOL_SIZE];
@@ -404,12 +316,6 @@ static void initBoard(int level)
     }
 }
 
-
-
-
-
-
-
 static void shuffleBoard(void)
 {
     int i, j, temp;
@@ -422,12 +328,6 @@ static void shuffleBoard(void)
     }
 }
 
-
-
-
-
-
-
 static int checkMatch(void)
 {
     int i;
@@ -437,12 +337,6 @@ static int checkMatch(void)
     }
     return 1;
 }
-
-
-
-
-
-
 
 static int isFinished(void)
 {
@@ -455,12 +349,6 @@ static int isFinished(void)
     return 1;
 }
 
-
-
-
-
-
-
 static float getPreviewProgress(void)
 {
     float progress;
@@ -471,12 +359,6 @@ static float getPreviewProgress(void)
     }
     return progress;
 }
-
-
-
-
-
-
 
 static GameLayout getGameLayout(void)
 {
@@ -512,24 +394,12 @@ static GameLayout getGameLayout(void)
     return layout;
 }
 
-
-
-
-
-
-
 static Rectangle cardBounds(GameLayout layout, int row, int col)
 {
     return (Rectangle){layout.left + col * (layout.cardWidth + layout.gap),
                        layout.top + row * (layout.cardHeight + layout.gap),
                        layout.cardWidth, layout.cardHeight};
 }
-
-
-
-
-
-
 
 static void drawCardPicture(Texture2D picture, Rectangle bounds)
 {

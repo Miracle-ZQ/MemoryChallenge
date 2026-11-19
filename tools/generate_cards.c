@@ -1,19 +1,11 @@
-
 #include <math.h>
 #include "raylib.h"
-
 
 static void polygon(Vector2 center, Vector2 points[], int count, Color color)
 {
     int i;
     for (i = 0; i < count; i++) DrawTriangle(center, points[(i + 1) % count], points[i], color);
 }
-
-
-
-
-
-
 
 static void drawFace(int id)
 {
@@ -194,12 +186,6 @@ static void drawFace(int id)
             break;
     }
 }
-
-
-
-
-
-
 
 int main(void)
 {
