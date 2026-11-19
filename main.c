@@ -337,7 +337,7 @@ static void drawCustomConfig(Font font, const CustomGameConfig *cfg, int failed)
         drawButton((Rectangle){520, 160.0f+i*65.0f, 48, 40}, "+", font);
         drawText(font, TextFormat("%d", i == 0 ? cfg->rows : i == 1 ? cfg->cols : (int)cfg->previewSeconds), 168.0f+i*65.0f, 24, COLOR_TITLE);
     }
-    drawText(font, "错配立即盖回，锁定 1 秒；仅两两配对", 360, 20, COLOR_HINT);
+    drawText(font, "错配亮牌锁定 1 秒，同时盖回；仅两两配对", 360, 20, COLOR_HINT);
     drawText(font, TextFormat("牌数 %d  配对 %d 组  基准 %d 秒", cfg->rows*cfg->cols, groups, 5*groups), 395, 20, COLOR_TITLE);
     drawText(font, TextFormat("棋盘倍率 %.2f  开局倍率 %.2f", b, p), 425, 20, COLOR_HINT);
     if (validateCustomConfig(cfg)) drawButton(customStart, "开始挑战", font);
