@@ -57,28 +57,31 @@ void drawGame(Font font);
 typedef struct {
     int rows;  // 棋盘行数，范围为 2～6
     int cols;  // 棋盘列数，范围为 2～6，与行数相乘必须为偶数
+    int previewSeconds;  // 开局亮牌秒数，范围为 1～30
     double k;  // 耗时曲线系数
 } CustomGameConfig;
 
 // 自定义通关成绩，保存统计、倍率和最终积分，便于结算页逐项展示
 typedef struct {
-    int groups;  // 本局总配对组数，等于总牌数除以 2
-    int correct;  // 已正确配对的组数，通关时等于 groups
-    int wrong;  // 配对错误次数，每次选满两张且图案不同计一次
-    int reveals;  // 主动亮牌次数，不包含开局自动亮牌
-    double baseScore;  // 基础积分 (100R - 10W) / G
-    double elapsedSeconds;  // 正式用时，单位为秒，不包含开局展示
-    double boardMultiplier;  // 棋盘倍率 B，由总配对组数决定
-    double observationSeconds;
-    double referenceObservation;
-    double referenceElapsed;
-    double observationFactor;
-    double revealFactor;
-    double timeMultiplier;  // 1 - B-
+    int G;  // 本局总配对组数，等于总牌数除以 2
+    int R;  // 已正确配对的组数，通关时等于 G
+    int W;  // 配对错误次数，每次选满两张且图案不同计一次
+    int H;  // 主动亮牌次数，不包含开局自动亮牌
+    double S;  // 基础积分 (100R - 10W) / G
+    double t;  // 正式用时，单位为秒，不包含开局展示
+    double B_plus;  // 棋盘倍率 B，由总配对组数决定
+    double T;
+    double T0;
+    double Tref;
+    double K;
+    double F_H;
+    double B_minus;  // B-
     int finalScore;
 } CustomGameResult;
 
-double customReferencePerGroup(int groups);
+// 根据配置与当前统计计算积分明细，不修改游戏状态
+void calculateCustomResult(const CustomGameConfig *cfg, int correct,
+    int wrong, int reveals, double elapsed, CustomGameResult *out);
 
 /*
  * 功能：检查自定义棋盘的总牌数是否为偶数
@@ -86,11 +89,11 @@ double customReferencePerGroup(int groups);
  * 输出：无，不修改传入配置
  * 返回值：1 总牌数为偶数，0 总牌数为奇数
  */
-int validateCustomConfig(const CustomGameConfig *cfg);
+int isEven(const CustomGameConfig *cfg);
 
 /*
  * 功能：按自定义配置开始两两配对的新局
- * 输入：cfg 为已校验的棋盘行列数与耗时曲线系数
+ * 输入：cfg 为已校验的棋盘行列数、亮牌秒数与耗时曲线系数
  * 输出：生成并打乱棋盘，清零计数和时间，进入开局亮牌阶段
  * 返回值：无
  */
