@@ -2,7 +2,6 @@
 #include <math.h>
 #include "game.h"
 #include "ui.h"
-
 static int cards[6][6];
 static int state[6][6];
 static int selectedRows[3], selectedCols[3];
@@ -13,44 +12,38 @@ static double previewEnd, startTime, hideTime;
 static double previewSeconds;
 static int cheatCount;
 static double revealEnd;
-
 static int customMode;
 static int successfulMatches;
 static CustomGameConfig customConfig;
 static CustomGameResult customResult;
 static double preciseElapsedSeconds;
-
-static double clampDouble(double v, double lo, double hi)
-{
-    return v < lo ? lo : v > hi ? hi : v;
-}
-
-int validateCustomConfig(const CustomGameConfig *cfg)
+int isEven(const CustomGameConfig *cfg)
 {
     return !(cfg->rows * cfg->cols % 2);
 }
-
-static void calculateCustomResult(const CustomGameConfig *cfg, int correct,
+void calculateCustomResult(const CustomGameConfig *cfg, int correct,
     int wrong, int reveals, double elapsed, CustomGameResult *out)
 {
     CustomGameResult r = {0};
-    double adjusted;
-    double raw;
-    r.groups = correct; r.correct = correct; r.wrong = wrong; r.reveals = reveals;
-    r.baseScore = 100 * correct - 40 * wrong; r.elapsedSeconds = elapsed;
-    r.boardMultiplier = clampDouble(1 + .04 * (r.groups - 8), .5, 1.5);
-    r.previewMultiplier = clampDouble(1 + .05 * (5 - cfg->previewSeconds), .5, 1.5);
-    r.plusMultiplier = r.boardMultiplier * r.previewMultiplier;
-    r.minusMultiplier = clampDouble(2 - r.previewMultiplier, .5, 2);
-    r.revealFactor = pow(.97, reveals);
-    r.timePenalty = .30 * clampDouble(elapsed / (5 * r.groups), 0, 1);
-    adjusted = 100 * correct * r.plusMultiplier - 40.0 * wrong * r.minusMultiplier;
-    raw = fmax(0, adjusted * r.revealFactor * (1 - r.timePenalty));
-    r.finalScore = (int)floor(raw + .5); *out = r;
+    r.G = cfg->rows * cfg->cols / 2;
+    r.R = correct;
+    r.W = wrong;
+    r.H = reveals;
+    r.S = (100.0 * r.R - 10.0 * r.W) / r.G;
+    r.t = elapsed;
+    r.B_plus = pow(1.3, (r.G - 8) / 10.0);
+    r.T = cfg->previewSeconds;
+    r.T0 = 5.0 + 0.3 * (r.G - 8);
+    r.Tref = r.G * r.T0;
+    r.K = exp(r.T / r.T0 - 1.0);
+    r.F_H = pow(0.97, reveals);
+    r.B_minus = 0.2 * cfg->k * (elapsed / r.Tref - 1.0);
+    double score = r.S * r.B_plus * (1.0 - r.B_minus)
+                 * r.F_H / r.K;
+    r.finalScore = (int)round(score);
+    *out = r;
 }
-
 int isCustomGame(void) { return customMode; }
-
 typedef enum {
     GAME_PREVIEW,
     GAME_SELECT,
@@ -59,28 +52,23 @@ typedef enum {
     GAME_FINISHED
 } GamePhase;
 static GamePhase phase = GAME_PREVIEW;
-
 #define CARD_POOL_SIZE 36
 static Texture2D faces[CARD_POOL_SIZE];
 static Texture2D back;
-
 typedef struct {
     float left, top;
     float cardWidth, cardHeight, gap;
     Rectangle backButton;
     Rectangle revealButton;
 } GameLayout;
-
 static void initBoard(int level);
 static void shuffleBoard(void);
 static int checkMatch(void);
 static int isFinished(void);
-
 static float getPreviewProgress(void);
 static GameLayout getGameLayout(void);
 static Rectangle cardBounds(GameLayout layout, int row, int col);
 static void drawCardPicture(Texture2D picture, Rectangle bounds);
-
 void loadGameResources(void)
 {
     int i;
@@ -91,10 +79,8 @@ void loadGameResources(void)
         SetTextureFilter(faces[i], TEXTURE_FILTER_BILINEAR);
     }
 }
-
-void startGame(int level)
+static void beginGame(int level)
 {
-    customMode = 0;
     successfulMatches = 0;
     preciseElapsedSeconds = 0;
     currentLevel = level;
@@ -107,27 +93,25 @@ void startGame(int level)
     revealEnd = 0;
     startTime = 0;
     hideTime = 0;
-    previewSeconds = level == 1 ? 4 : level == 2 ? 6 : 8;
+    previewSeconds = customMode ? customConfig.previewSeconds : (level == 1 ? 4 : level == 2 ? 6 : 8);
     previewEnd = GetTime() + previewSeconds;
     phase = GAME_PREVIEW;
 }
-
+void startGame(int level)
+{
+    customMode = 0;
+    beginGame(level);
+}
 void startCustomGame(const CustomGameConfig *cfg)
 {
     customConfig = *cfg;
-    startGame(1);
     customMode = 1;
-    initBoard(0);
-    shuffleBoard();
-    previewSeconds = cfg->previewSeconds;
-    previewEnd = GetTime() + previewSeconds;
+    beginGame(0);
 }
-
 void getCustomGameResult(CustomGameResult *out)
 {
     *out = customResult;
 }
-
 void unloadGameResources(void)
 {
     int i;
@@ -136,13 +120,11 @@ void unloadGameResources(void)
         UnloadTexture(faces[i]);
     }
 }
-
 int updateGame(int *seconds)
 {
     int r, c, i;
     double now = GetTime();
     GameLayout layout;
-
     layout = getGameLayout();
     if (isButtonClicked(layout.backButton)) {
         return 2;
@@ -154,7 +136,6 @@ int updateGame(int *seconds)
         }
         return 0;
     }
-
     preciseElapsedSeconds = now - startTime;
     elapsedSeconds = (int)preciseElapsedSeconds;
     if (phase == GAME_REVEAL) {
@@ -171,7 +152,6 @@ int updateGame(int *seconds)
             count = 0;
             phase = GAME_SELECT;
         }
-
         if (phase == GAME_WAIT) return 0;
     }
     if (phase == GAME_SELECT && (!customMode || count == 0) && isButtonClicked(layout.revealButton)) {
@@ -203,6 +183,12 @@ int updateGame(int *seconds)
                         return 1;
                     }
                 } else {
+                    if (customMode) {
+                        for (i = 0; i < count; i++) {
+                            state[selectedRows[i]][selectedCols[i]] = 0;
+                        }
+                        count = 0;
+                    }
                     matchErrors++;
                     hideTime = now + 1.0;
                     phase = GAME_WAIT;
@@ -213,17 +199,14 @@ int updateGame(int *seconds)
     }
     return 0;
 }
-
 int getGameMistakes(void)
 {
     return matchErrors;
 }
-
 int getGameCheats(void)
 {
     return cheatCount;
 }
-
 void drawGame(Font font)
 {
     int r, c;
@@ -237,6 +220,8 @@ void drawGame(Font font)
                (Vector2){-getUiCamera().offset.x / getUiCamera().zoom + 130, 10}, 16, 1, DARKGRAY);
     if (phase == GAME_PREVIEW || phase == GAME_REVEAL) {
         label = phase == GAME_PREVIEW ? "记忆倒计时" : "亮牌倒计时";
+        if (customMode && phase == GAME_PREVIEW)
+            label = TextFormat("亮牌剩余 %.1f 秒", fmax(0.0, previewEnd - GetTime()));
     } else {
         if (customMode && phase == GAME_WAIT) {
             label = TextFormat("用时：%d 秒   配对错误：%d 次   锁定：%.1f 秒",
@@ -247,12 +232,10 @@ void drawGame(Font font)
     }
     DrawTextEx(font, label, (Vector2){-getUiCamera().offset.x / getUiCamera().zoom + 10, 32}, 16, 1, DARKGRAY);
     if (phase == GAME_PREVIEW || phase == GAME_REVEAL) {
-
         float left = -getUiCamera().offset.x / getUiCamera().zoom + 10;
         Rectangle track = {left + 170, 34, layout.revealButton.x - left - 182, 10};
         Rectangle progress = track;
         float ratio = getPreviewProgress();
-
         Color barColor = ratio > 0.5f ? (Color){ 90, 170, 110, 255 }
                        : ratio > 0.2f ? (Color){ 225, 170, 60, 255 }
                                      : (Color){ 205, 80, 80, 255 };
@@ -260,9 +243,13 @@ void drawGame(Font font)
         DrawRectangleRec(track, (Color){218, 226, 236, 255});
         DrawRectangleRec(progress, barColor);
     }
-    if (customMode) DrawTextEx(font, TextFormat("已配对 %d/%d  基础积分 %d  亮牌剩余 %.1f%%", successfulMatches, rows*cols/2,
-        successfulMatches*100-matchErrors*40, 100*pow(.97, cheatCount)),
-        (Vector2){-getUiCamera().offset.x/getUiCamera().zoom+10, 58}, 16, 1, WHITE);
+    if (customMode) {
+        CustomGameResult preview;
+        calculateCustomResult(&customConfig, successfulMatches, matchErrors, cheatCount, preciseElapsedSeconds, &preview);
+        DrawTextEx(font, TextFormat("已配对 %d/%d  基础积分 %.2f  亮牌剩余 %.1f%%",
+                   preview.R, preview.G, preview.S, 100 * preview.F_H),
+                   (Vector2){-getUiCamera().offset.x/getUiCamera().zoom+10, 58}, 16, 1, WHITE);
+    }
     for (r = 0; r < rows; r++) {
         for (c = 0; c < cols; c++) {
             bounds = cardBounds(layout, r, c);
@@ -282,7 +269,6 @@ void drawGame(Font font)
                phase == GAME_SELECT ? "亮牌" : "暂不可用", font);
     drawButton(layout.backButton, "返回", font);
 }
-
 static void initBoard(int level)
 {
     int pool[CARD_POOL_SIZE];
@@ -294,10 +280,8 @@ static void initBoard(int level)
     if (customMode) { rows = customConfig.rows; cols = customConfig.cols; groupSize = 2; }
     kinds = rows * cols / groupSize;
     for (i = 0; i < CARD_POOL_SIZE; i++) pool[i] = i;
-
     for (i = 0; i < kinds; i++) {
         j = i + rand() % (CARD_POOL_SIZE - i);
-
         temp = pool[i];
         pool[i] = pool[j];
         pool[j] = temp;
@@ -315,19 +299,16 @@ static void initBoard(int level)
         }
     }
 }
-
 static void shuffleBoard(void)
 {
     int i, j, temp;
     for (i = rows * cols - 1; i > 0; i--) {
         j = rand() % (i + 1);
-
         temp = cards[i / cols][i % cols];
         cards[i / cols][i % cols] = cards[j / cols][j % cols];
         cards[j / cols][j % cols] = temp;
     }
 }
-
 static int checkMatch(void)
 {
     int i;
@@ -337,7 +318,6 @@ static int checkMatch(void)
     }
     return 1;
 }
-
 static int isFinished(void)
 {
     int r, c;
@@ -348,7 +328,6 @@ static int isFinished(void)
     }
     return 1;
 }
-
 static float getPreviewProgress(void)
 {
     float progress;
@@ -359,18 +338,15 @@ static float getPreviewProgress(void)
     }
     return progress;
 }
-
 static GameLayout getGameLayout(void)
 {
     Camera2D camera = getUiCamera();
     GameLayout layout;
-
     float width = GetScreenWidth() / camera.zoom;
     float height = GetScreenHeight() / camera.zoom;
     float margin = 10;
     float boardTop = customMode ? 86.0f : 62.0f;
     float availableHeight = height - boardTop - margin;
-
     layout.gap = availableHeight / 90;
     if (layout.gap < 4) layout.gap = 4;
     if (layout.gap > 10) layout.gap = 10;
@@ -380,27 +356,23 @@ static GameLayout getGameLayout(void)
     layout.cardHeight = (availableHeight - (rows - 1) * layout.gap) / rows;
     layout.backButton = (Rectangle){layout.left + width - margin * 2 - 90, 10, 90, 36};
     layout.revealButton = (Rectangle){layout.backButton.x - 100, 10, 90, 36};
-
     if (layout.cardWidth < layout.cardHeight) {
         layout.cardHeight = layout.cardWidth;
     } else {
         layout.cardWidth = layout.cardHeight;
     }
-
     layout.left += (width - margin * 2 -
                    (cols * layout.cardWidth + (cols - 1) * layout.gap)) / 2;
     layout.top += (availableHeight -
                   (rows * layout.cardHeight + (rows - 1) * layout.gap)) / 2;
     return layout;
 }
-
 static Rectangle cardBounds(GameLayout layout, int row, int col)
 {
     return (Rectangle){layout.left + col * (layout.cardWidth + layout.gap),
                        layout.top + row * (layout.cardHeight + layout.gap),
                        layout.cardWidth, layout.cardHeight};
 }
-
 static void drawCardPicture(Texture2D picture, Rectangle bounds)
 {
     float padding = (bounds.width < bounds.height ? bounds.width : bounds.height) * 0.08f;
