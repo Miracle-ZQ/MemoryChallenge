@@ -160,6 +160,7 @@ int main(void)
                     saveResult = 0;
                     if (isCustomGame()) {
                         getCustomGameResult(&customResult);
+                        saveResult = saveCustomScore(user.name, customResult.finalScore);
                     } else if (!getGameCheats()) {
                         saveResult = saveScore(user.name, level, seconds);
                     }

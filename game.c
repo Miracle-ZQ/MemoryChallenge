@@ -37,7 +37,7 @@ void calculateCustomResult(const CustomGameConfig *cfg, int correct,
     r.Tref = r.G * r.T0;
     r.K = exp(r.T / r.T0 - 1.0);
     r.F_H = pow(0.97, reveals);
-    r.B_minus = 0.2 * cfg->k * (elapsed / r.Tref - 1.0);
+    r.B_minus = 0.2 * cfg->k * tanh(elapsed / r.Tref - 1.0);
     double score = r.S * r.B_plus * (1.0 - r.B_minus)
                  * r.F_H / r.K;
     r.finalScore = (int)round(score);
@@ -154,7 +154,7 @@ int updateGame(int *seconds)
         }
         if (phase == GAME_WAIT) return 0;
     }
-    if (phase == GAME_SELECT && (!customMode || count == 0) && isButtonClicked(layout.revealButton)) {
+    if (phase == GAME_SELECT && isButtonClicked(layout.revealButton)) {
         cheatCount++;
         revealEnd = now + 4.0;
         phase = GAME_REVEAL;
@@ -183,12 +183,6 @@ int updateGame(int *seconds)
                         return 1;
                     }
                 } else {
-                    if (customMode) {
-                        for (i = 0; i < count; i++) {
-                            state[selectedRows[i]][selectedCols[i]] = 0;
-                        }
-                        count = 0;
-                    }
                     matchErrors++;
                     hideTime = now + 1.0;
                     phase = GAME_WAIT;
