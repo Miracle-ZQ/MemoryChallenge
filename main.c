@@ -192,6 +192,7 @@ int main(void)
                     saveResult = 0;
                     if (isCustomGame()) {
                         getCustomGameResult(&customResult);
+                        saveResult = saveCustomScore(user.name, customResult.finalScore);
                     } else if (!getGameCheats()) {// 作弊局只显示结算，不向排行榜提交成绩
                         saveResult = saveScore(user.name, level, seconds);
                     }
